@@ -1,0 +1,12 @@
+{
+  "name": "training-marketplace",
+  "owner": { "name": "davidsmv" },
+  "description": "Training plugin: a Python skill, a reviewer subagent and guardrail hooks",
+  "plugins": [
+    {
+      "name": "training-plugin",
+      "source": "./",
+      "description": "Python skill, reviewer subagent and guardrail hooks from the Claude training"
+    }
+  ]
+}

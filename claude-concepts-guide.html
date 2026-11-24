@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code Study Guide</title>
+<style>
+  :root {
+    --bg: #f5f6f9; --surface: #ffffff; --fg: #1b2030; --muted: #5d6678; --line: #e2e5eb;
+    --accent: #3b5bdb; --accent-soft: #edf1ff; --accent-fg: #ffffff;
+    --code-bg: #f1f3f7; --code-fg: #1f2433;
+    --ok: #1f7a4a; --ok-soft: #e6f5ec; --bad: #b42318; --bad-soft: #fdecea;
+    --warn: #8f5d07; --warn-soft: #fcf3e1;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218; --surface: #171b24; --fg: #e5e8ee; --muted: #98a1b3; --line: #2a3040;
+      --accent: #8aa4ff; --accent-soft: #1e2640; --accent-fg: #0d1220;
+      --code-bg: #10141c; --code-fg: #dfe4ee;
+      --ok: #5ccf91; --ok-soft: #13291e; --bad: #ff8a80; --bad-soft: #3a1714;
+      --warn: #e8b04a; --warn-soft: #33270f;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1218; --surface: #171b24; --fg: #e5e8ee; --muted: #98a1b3; --line: #2a3040;
+    --accent: #8aa4ff; --accent-soft: #1e2640; --accent-fg: #0d1220;
+    --code-bg: #10141c; --code-fg: #dfe4ee;
+    --ok: #5ccf91; --ok-soft: #13291e; --bad: #ff8a80; --bad-soft: #3a1714;
+    --warn: #e8b04a; --warn-soft: #33270f;
+    --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 15.5px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button { font: inherit; color: inherit; }
+  code, pre, .blank { font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; gap: 16px; padding: 0 20px;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; white-space: nowrap; min-width: 0; }
+  .brand-text { overflow: hidden; text-overflow: ellipsis; }
+  .progress { flex: none; }
+  .brand .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-size: .8rem; font-weight: 700; }
+  .progress { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--muted); }
+  .progress .track { width: 140px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .progress .fill-bar { height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+  .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: .85rem; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; }
+
+  /* ---------- Layout ---------- */
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: calc(100vh - 56px); }
+  .sidebar {
+    position: sticky; top: 56px; align-self: start; height: calc(100vh - 56px); overflow-y: auto;
+    background: var(--surface); border-right: 1px solid var(--line); padding: 16px 10px 24px;
+  }
+  .nav-group { margin-bottom: 14px; }
+  .nav-group-label { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 10px 6px; }
+  .nav-item {
+    width: 100%; display: flex; align-items: center; gap: 8px; text-align: left;
+    background: none; border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer; color: var(--fg); font-size: .92rem;
+  }
+  .nav-item:hover { background: var(--bg); }
+  .nav-item[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .nav-item .badge { margin-left: auto; font-size: .72rem; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 99px; padding: 0 7px; font-weight: 500; }
+  .nav-item .badge.complete { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+
+  .content { padding: 32px 40px 80px; }
+  .panel { display: none; max-width: 780px; }
+  .panel.active { display: block; }
+
+  /* ---------- Lesson typography ---------- */
+  .eyebrow { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  h2 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }
+  .lead { font-size: 1.08rem; color: var(--muted); margin: 0 0 24px; }
+  h3 { font-size: 1.05rem; margin: 32px 0 10px; display: flex; align-items: center; gap: 8px; }
+  h3 .count { font-size: .78rem; font-weight: 500; color: var(--muted); }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 5px; border-radius: 4px; font-size: .88em; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); color: var(--code-fg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: .85rem; line-height: 1.6; margin: 8px 0 14px; }
+  pre code { background: none; padding: 0; overflow-wrap: normal; font-size: inherit; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 12px 0; box-shadow: var(--shadow); }
+  .card > :last-child { margin-bottom: 0; }
+  .callout { border-radius: 10px; padding: 12px 14px; margin: 14px 0; background: var(--warn-soft); border: 1px solid transparent; }
+  .callout.info { background: var(--accent-soft); }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; margin-bottom: 16px; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .status.ok { color: var(--ok); background: var(--ok-soft); }
+  .status.warn { color: var(--warn); background: var(--warn-soft); }
+
+  .tablewrap { overflow-x: auto; margin: 8px 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--muted); font-weight: 600; font-size: .8rem; background: var(--bg); white-space: nowrap; }
+  td.nw { white-space: nowrap; }
+  td.ok { color: var(--ok); } td.bad { color: var(--bad); }
+  .jump { color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; }
+  .jump:hover { text-decoration: underline; }
+
+  .order { display: flex; gap: 6px; margin: 8px 0 14px; flex-wrap: wrap; }
+  .order span { flex: 1 1 120px; text-align: center; padding: 8px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: .85rem; }
+
+  /* ---------- Client / server diagram ---------- */
+  .duo { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; margin: 12px 0 16px; }
+  .role { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .role.client { border-top: 3px solid var(--accent); }
+  .role.server { border-top: 3px solid var(--ok); }
+  .role-tag { font-size: .72rem; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+  .role h4 { margin: 2px 0 6px; font-size: 1.05rem; }
+  .role p { font-size: .9rem; margin-bottom: 8px; color: var(--muted); }
+  .role ul { font-size: .88rem; margin: 0; padding-left: 18px; }
+  .wire { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; min-width: 112px; font-size: .78rem; color: var(--muted); text-align: center; }
+  .wire b { color: var(--fg); font-weight: 600; }
+  .wire .sw { display: inline-block; font-size: 1.5rem; line-height: 1; color: var(--accent); }
+  @media (max-width: 640px) {
+    .duo { grid-template-columns: 1fr; }
+    .wire { min-width: 0; padding: 2px 0; }
+    .wire .sw { transform: rotate(90deg); }
+  }
+
+  /* ---------- Quiz ---------- */
+  .q { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 12px 0; box-shadow: var(--shadow); }
+  .q.solved { border-color: var(--ok); }
+  .q-num { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .q-text { font-weight: 600; margin: 4px 0 12px; }
+  .opts { display: grid; gap: 8px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; line-height: 1.45;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt:disabled { cursor: default; }
+  .opt .letter { flex: none; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: .75rem; font-weight: 700; background: var(--bg); border: 1px solid var(--line); }
+  .opt.right { border-color: var(--ok); background: var(--ok-soft); }
+  .opt.right .letter { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-soft); opacity: .85; }
+  .opt.wrong .letter { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+  .feedback { margin-top: 12px; padding: 10px 12px; border-radius: 9px; font-size: .92rem; }
+  .feedback.ok { background: var(--ok-soft); }
+  .feedback.bad { background: var(--bad-soft); }
+
+  /* ---------- Fill in the code ---------- */
+  .fill { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin: 12px 0; overflow: hidden; box-shadow: var(--shadow); }
+  .fill.solved { border-color: var(--ok); }
+  .fill-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .fill-title { font-weight: 600; }
+  .fill-file { font-family: ui-monospace, Consolas, monospace; font-size: .8rem; color: var(--muted); }
+  .fill pre { margin: 0; border: 0; border-radius: 0; }
+  .blank {
+    font-size: inherit; line-height: 1.3; color: var(--accent); background: var(--surface);
+    border: 1px dashed var(--accent); border-radius: 5px; padding: 0 4px; margin: 1px 0; min-width: 5ch;
+  }
+  .blank:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-style: solid; }
+  .blank.right { color: var(--ok); border: 1px solid var(--ok); background: var(--ok-soft); }
+  .blank.wrong { color: var(--bad); border: 1px solid var(--bad); background: var(--bad-soft); }
+  .fill-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); }
+  .fill-msg { font-size: .88rem; color: var(--muted); }
+  .fill-msg.ok { color: var(--ok); font-weight: 600; }
+  .fill-msg ul { margin: 4px 0 0; padding-left: 18px; }
+
+  /* ---------- Write-it-yourself exercises ---------- */
+  .q-code { margin: 0 0 12px; }
+  .write-body { padding: 12px 16px 16px; }
+  .write-label { display: block; font-weight: 600; margin-bottom: 8px; }
+  .write textarea {
+    width: 100%; min-height: 84px; resize: vertical; padding: 10px 12px; font: inherit;
+    color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+  }
+  .write textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .write-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  .model { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); }
+  .model p { margin: 0 0 8px; }
+  .points { list-style: none; padding: 0; margin: 8px 0 0; }
+  .points li { margin-bottom: 6px; }
+  .points label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+  .points input { margin-top: 5px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0 14px; }
+  .grid-2 .qcard { margin: 0; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ---------- Review cards ---------- */
+  .qcard { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 12px 16px; margin: 10px 0; }
+  .qcard h4 { margin: 0 0 4px; font-size: 1rem; }
+  .qcard p { margin: 0 0 6px; font-size: .92rem; }
+  .qcard p:last-child { margin-bottom: 0; }
+  .bugfile { margin: 14px 0; }
+  .bugfile .answer-row { display: grid; grid-template-columns: 78px 1fr; gap: 4px 12px; margin: 6px 0; font-size: .92rem; }
+  .bugfile .answer-row b { color: var(--muted); font-weight: 600; }
+  @media (max-width: 640px) { .bugfile .answer-row { grid-template-columns: 1fr; } }
+
+  /* ---------- Pager ---------- */
+  .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .pager button { flex: 0 1 48%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+  .pager button:hover { border-color: var(--accent); }
+  .pager .next { text-align: right; margin-left: auto; }
+  .pager small { display: block; color: var(--muted); font-size: .75rem; }
+  .pager b { color: var(--accent); }
+
+  .sidebar { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .menu-btn { display: none; flex: none; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; place-items: center; }
+  .menu-btn:hover { border-color: var(--muted); }
+  .menu-btn svg { width: 18px; height: 18px; }
+  .backdrop { position: fixed; inset: 56px 0 0 0; background: rgba(10, 14, 22, .45); z-index: 19; }
+
+  /* ---------- Small screens: sidebar becomes a slide-out drawer ---------- */
+  @media (max-width: 860px) {
+    .layout { display: block; }
+    .menu-btn { display: grid; }
+    .sidebar {
+      position: fixed; top: 56px; left: 0; bottom: 0; z-index: 20; width: min(280px, 85vw); height: auto;
+      transform: translateX(-100%); transition: transform .2s ease; visibility: hidden;
+    }
+    .sidebar.open { transform: none; visibility: visible; box-shadow: 0 8px 30px rgba(0, 0, 0, .35); }
+    .topbar { padding: 0 16px; gap: 10px; }
+    .content { padding: 24px 16px 64px; }
+    .progress { gap: 8px; }
+    .progress .track { width: 48px; }
+    .progress .label-long { display: none; }
+    .pager button { flex-basis: 50%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="menu-btn" id="menu" type="button" aria-label="Open lessons" aria-expanded="false" aria-controls="lessons">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <div class="brand"><span class="logo">CC</span><span class="brand-text">Claude Code Study Guide</span></div>
+  <div class="progress">
+    <span id="progress-text">0 / 0</span><span class="label-long">exercises done</span>
+    <div class="track"><div class="fill-bar" id="progress-bar"></div></div>
+    <button class="btn ghost" id="reset" type="button">Reset</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="backdrop" id="backdrop" hidden></div>
+  <nav class="sidebar" id="lessons" role="tablist" aria-label="Lessons" aria-orientation="vertical">
+    <div class="nav-group">
+      <div class="nav-group-label">Start</div>
+      <button class="nav-item" role="tab" data-tab="overview">Overview<span class="badge"></span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Configure Claude Code</div>
+      <button class="nav-item" role="tab" data-tab="claudemd">CLAUDE.md<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="rules">Rules<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="hooks">Hooks<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="permissions">Permissions<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="agents">Subagents<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="skills">Skills<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="plugins">Plugins<span class="badge"></span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Extend &amp; optimize</div>
+      <button class="nav-item" role="tab" data-tab="mcp">MCP<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="transport">MCP transport &amp; scope<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="caching">Prompt caching<span class="badge"></span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Review</div>
+      <button class="nav-item" role="tab" data-tab="codereview">AI code review<span class="badge"></span></button>
+      <button class="nav-item" role="tab" data-tab="bughunt">Config bug hunt<span class="badge"></span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Deploy</div>
+      <button class="nav-item" role="tab" data-tab="enterprise">Enterprise security<span class="badge"></span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Reference</div>
+      <button class="nav-item" role="tab" data-tab="setup">Setup lessons<span class="badge"></span></button>
+    </div>
+  </nav>
+
+  <main class="content">
+
+<!-- ======================= OVERVIEW ======================= -->
+<section class="panel" role="tabpanel" id="panel-overview">
+  <div class="eyebrow">Start here</div>
+  <h2>Overview</h2>
+  <p class="lead">CLAUDE.md, rules, skills and subagents are instructions the model chooses to follow. Only a hook is code that runs no matter what the model decides. MCP adds new abilities, and plugins bundle the rest so you can share it.</p>
+
+  <h3>The pieces at a glance</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Piece</th><th>What it is</th><th>Loads / runs when</th><th>Enforced by</th></tr>
+    <tr><td class="nw"><button class="jump" data-go="claudemd">CLAUDE.md</button></td><td>General project instructions</td><td>Always</td><td>The model</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="rules">Rules</button></td><td>Instructions for certain files</td><td>Matching files are touched</td><td>The model</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="hooks">Hooks</button></td><td>Your code at lifecycle events</td><td>The event fires</td><td><b>Your script, every time</b></td></tr>
+    <tr><td class="nw"><button class="jump" data-go="permissions">Permissions</button></td><td>Allow, ask and deny rules, plus modes</td><td>Every tool call</td><td>Claude Code itself</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="agents">Subagents</button></td><td>A worker with its own prompt and tools</td><td>Claude delegates a task</td><td>The model, isolated</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="skills">Skills</button></td><td>A reusable procedure</td><td>Task matches, or <code>/name</code></td><td>The model, main chat</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="plugins">Plugins</button></td><td>A bundle of skills, agents and hooks</td><td>Installed or loaded</td><td>Whatever is inside</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="mcp">MCP</button></td><td>A program that gives Claude new abilities</td><td>While connected</td><td>The server's code</td></tr>
+    <tr><td class="nw"><button class="jump" data-go="caching">Caching</button></td><td>API feature to reuse a stable prefix</td><td>Per request</td><td>The API</td></tr>
+  </table></div>
+
+  <h3>Which one do I need?</h3>
+  <ul>
+    <li>Must <b>always</b> hold, or is a safety limit → <b>hook</b></li>
+    <li>Applies <b>everywhere</b> → <b>CLAUDE.md</b></li>
+    <li>A convention for <b>some files</b> → <b>rule</b></li>
+    <li>A <b>procedure you repeat</b>, loaded only when needed → <b>skill</b></li>
+    <li>A <b>self-contained task</b> that would clutter the chat, or needs restricted tools → <b>subagent</b></li>
+    <li>Claude must <b>reach something new</b> (database, Jira, an API) → <b>MCP server</b></li>
+    <li>You want to <b>share or reuse</b> your setup → <b>plugin</b></li>
+  </ul>
+
+  <h3>Where things live</h3>
+  <div class="tablewrap"><table>
+    <tr><th>What</th><th>Location</th><th>In git?</th><th>Check with</th></tr>
+    <tr><td>Project instructions</td><td><code>CLAUDE.md</code></td><td>Yes</td><td><code>/memory</code></td></tr>
+    <tr><td>Rules</td><td><code>.claude/rules/*.md</code></td><td>Yes</td><td><code>/memory</code></td></tr>
+    <tr><td>Hooks</td><td><code>.claude/settings.json</code>, <code>.claude/hooks/</code></td><td>Yes</td><td><code>/hooks</code></td></tr>
+    <tr><td>Permissions, shared</td><td><code>.claude/settings.json</code></td><td>Yes</td><td><code>/permissions</code></td></tr>
+    <tr><td>Permissions, personal</td><td><code>.claude/settings.local.json</code></td><td><b>No</b></td><td><code>/permissions</code></td></tr>
+    <tr><td>Subagents</td><td><code>.claude/agents/*.md</code></td><td>Yes</td><td><code>/agents</code></td></tr>
+    <tr><td>Skills</td><td><code>.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>Yes</td><td><code>/help</code></td></tr>
+    <tr><td>MCP servers (project scope)</td><td><code>.mcp.json</code></td><td>Yes</td><td><code>/mcp</code>, <code>claude mcp list</code></td></tr>
+    <tr><td>Plugin</td><td><code>training-plugin/</code></td><td>Own repo</td><td><code>/plugin</code></td></tr>
+    <tr><td>Private settings, token</td><td><code>.claude/settings.local.json</code></td><td><b>No</b></td><td><code>/status</code></td></tr>
+  </table></div>
+
+  <div class="callout info">
+    <b>Status labels.</b> <span class="status ok" style="margin:0 4px">Confirmed live</span> means it was run and seen working.
+    <span class="status warn" style="margin:0 4px">Built, not confirmed</span> means it was created and script-tested, but not yet seen in a live session.
+  </div>
+
+  <div class="practice" data-lesson="overview"></div>
+</section>
+
+<!-- ======================= CLAUDE.md ======================= -->
+<section class="panel" role="tabpanel" id="panel-claudemd">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>CLAUDE.md</h2>
+  <p class="lead">Always-on project memory, loaded into every session.</p>
+  <span class="status ok">Confirmed live</span>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>Use it for broad guidance: build and test commands, architecture that spans files, constraints that apply everywhere.</li>
+    <li>Keep it short. It costs context in <b>every</b> session, so long procedures belong in a skill.</li>
+    <li>No secrets. It is usually committed.</li>
+    <li>Generate a first version with <code>/init</code>; check what is loaded with <code>/memory</code>.</li>
+  </ul>
+
+  <h3>In this project</h3>
+  <div class="card">
+    <p>This file records the repository layout and validation commands. It deliberately avoids personal machine settings and credentials.</p>
+  </div>
+
+  <div class="practice" data-lesson="claudemd"></div>
+</section>
+
+<!-- ======================= RULES ======================= -->
+<section class="panel" role="tabpanel" id="panel-rules">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Rules</h2>
+  <p class="lead">Narrower instructions in <code>.claude/rules/</code>, loaded only when Claude works with matching files.</p>
+  <span class="status ok">Confirmed live</span>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>Scope comes from the <code>paths</code> glob in the frontmatter, <b>not</b> from where the file sits.</li>
+    <li>A rule with no <code>paths</code> loads at launch, like CLAUDE.md, even inside a subdirectory.</li>
+    <li>Subdirectories such as <code>.claude/rules/database/</code> are only for organizing.</li>
+    <li>"Never modify the schema" applies everywhere, so it goes in CLAUDE.md. "SQL here needs explicit transactions" is narrow, so it is a rule.</li>
+  </ul>
+
+  <h3>In this project</h3>
+<pre><code>---
+paths:
+  - "src/**/*.py"
+---
+# Python rules
+- Add type hints to all function signatures.
+- Every docstring must start with the tag [py-rule]
+- Use pathlib.Path instead of os.path</code></pre>
+  <ul>
+    <li><code>.claude/rules/python.md</code> is scoped to <code>src/**/*.py</code>.</li>
+    <li><code>.claude/rules/database.md</code> is scoped to <code>src/db/**/*.sql</code>, which has no files yet.</li>
+    <li><code>.claude/rules/database/naming.md</code> has no <code>paths</code>, so it always loads.</li>
+  </ul>
+  <p>The <code>[py-rule]</code> tag proves the rule loaded, since Claude would never write it unprompted. It appeared in <code>src/calculator.py</code>.</p>
+
+  <div class="practice" data-lesson="rules"></div>
+</section>
+
+<!-- ======================= HOOKS ======================= -->
+<section class="panel" role="tabpanel" id="panel-hooks">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Hooks</h2>
+  <p class="lead">Your own scripts at fixed points in the lifecycle. A hook fires every time; a CLAUDE.md instruction is followed "most of the time".</p>
+  <span class="status ok">Confirmed live</span>
+
+  <h3>Events</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Event</th><th>When</th><th>Typical use</th></tr>
+    <tr><td class="nw"><code>PreToolUse</code></td><td>Before a tool runs</td><td><b>Block it</b>: exit 2, reason on stderr</td></tr>
+    <tr><td class="nw"><code>PostToolUse</code></td><td>After a tool ran</td><td>Format, test, log. Cannot block</td></tr>
+    <tr><td class="nw"><code>UserPromptSubmit</code></td><td>You send a prompt</td><td>Validate it or add context</td></tr>
+    <tr><td class="nw"><code>Stop</code></td><td>The model finishes a turn</td><td>Notify, clean up</td></tr>
+    <tr><td class="nw"><code>Notification</code></td><td>Needs permission, or idle 60s</td><td>Send to Slack or a log</td></tr>
+    <tr><td class="nw"><code>SessionStart</code> / <code>SessionEnd</code></td><td>Session starts / ends</td><td>Check setup / final audit</td></tr>
+  </table></div>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>Each hook has an <b>event</b>, an optional <b>matcher</b> such as <code>Edit|Write</code>, and a <b>command</b>.</li>
+    <li>The command receives the tool call as <b>JSON on stdin</b>.</li>
+    <li>Exit <b>0</b> allows. Exit <b>2</b> blocks, and stderr is shown to Claude as the reason.</li>
+    <li><b>Only exit 2 blocks.</b> Any other non-zero code, including the usual Unix failure code 1, is a non-blocking error: the action still goes ahead. To enforce a policy, use <code>exit 2</code>.</li>
+    <li>It applies in every session and permission mode: a guardrail, not a convention.</li>
+  </ul>
+
+  <h3>In this project</h3>
+<pre><code>// .claude/settings.json (wrapped for reading; PostToolUse is the same with log_edit.py)
+"PreToolUse": [{ "matcher": "Edit|Write", "hooks": [{ "type": "command",
+  "command": "python -c \"import os,runpy; runpy.run_path(os.path.join(
+      os.environ.get('CLAUDE_PROJECT_DIR') or '.', '.claude/hooks/block_prod_config.py'),
+      run_name='__main__')\"; exit $LASTEXITCODE" }] }]</code></pre>
+  <ul>
+    <li><code>block_prod_config.py</code> blocks any edit whose path contains <code>config/production</code>.</li>
+    <li><code>log_edit.py</code> appends each edit to <code>.claude/hooks/audit.log</code>.</li>
+    <li>Registered in <code>settings.json</code> (shareable), not <code>settings.local.json</code> (holds the token).</li>
+    <li><b>Why the long command?</b> It used to be <code>python "$CLAUDE_PROJECT_DIR/.claude/hooks/block_prod_config.py"</code>. Only Claude Code sets that variable. Another agent host that read the same settings left it empty, so Python couldn't find the script, exited with code 2, and the hook blocked every edit. Now Python reads the variable itself and falls back to the current folder. <code>; exit $LASTEXITCODE</code> keeps exit code 2 when a host runs hooks in PowerShell, which otherwise reports it as 1. In Git Bash the variable is unset, so a bare <code>exit</code> keeps Python's code.</li>
+  </ul>
+
+  <div class="practice" data-lesson="hooks"></div>
+</section>
+
+<!-- ======================= PERMISSIONS ======================= -->
+<section class="panel" role="tabpanel" id="panel-permissions">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Permissions</h2>
+  <p class="lead">What Claude Code may do without asking, what it must ask about, and what it can never do. Claude Code enforces these rules itself, so they don't depend on the model following instructions.</p>
+  <span class="status warn">Reference from the Claude Code docs</span>
+
+  <h3>Allow, ask and deny</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Rule</th><th>What happens</th><th>Example</th></tr>
+    <tr><td class="nw"><b>allow</b></td><td>Runs without asking</td><td><code>Bash(git push *)</code></td></tr>
+    <tr><td class="nw"><b>ask</b></td><td>Always prompts, even if an allow rule also matches</td><td><code>WebFetch(domain:github.com)</code></td></tr>
+    <tr><td class="nw"><b>deny</b></td><td>Blocked</td><td><code>Read(./.env)</code></td></tr>
+  </table></div>
+  <ul>
+    <li><b>Deny wins over ask, and ask wins over allow.</b> An allow rule can't carve an exception out of a deny rule.</li>
+    <li>A rule is a tool name, optionally with a pattern in brackets. A bare <code>Bash</code> (or <code>Bash(*)</code>) matches <b>every</b> shell command.</li>
+    <li>File rules are relative to the project: <code>Read(.env)</code> follows gitignore rules and matches a <code>.env</code> at any depth, the same as <code>Read(**/.env)</code>. Use <code>//path</code> for an absolute path and <code>~/path</code> for your home folder.</li>
+  </ul>
+
+  <h3>Permission modes</h3>
+  <p>The mode sets how Claude Code treats everything your rules don't decide. Set the starting one with <code>defaultMode</code>.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Mode</th><th>What it does</th></tr>
+    <tr><td class="nw"><code>default</code></td><td>Prompts the first time each tool is used. Shown as <b>Manual</b> in the interface, and <code>manual</code> is accepted as an alias</td></tr>
+    <tr><td class="nw"><code>acceptEdits</code></td><td>Accepts file edits, and common filesystem commands such as <code>mkdir</code> and <code>mv</code>, in the working directory</td></tr>
+    <tr><td class="nw"><code>plan</code></td><td>Explores with read-only actions and doesn't edit your source files</td></tr>
+    <tr><td class="nw"><code>auto</code></td><td>Runs without routine prompts, while a background classifier checks that actions match your request</td></tr>
+    <tr><td class="nw"><code>dontAsk</code></td><td>Automatically denies anything that would otherwise prompt</td></tr>
+    <tr><td class="nw"><code>bypassPermissions</code></td><td>Skips permission prompts, including for writes to protected paths such as <code>.git</code> and <code>.claude</code></td></tr>
+  </table></div>
+
+  <div class="callout">
+    <b><code>bypassPermissions</code> is for isolated environments only.</b> The docs say to use it only in containers or VMs where Claude Code can't damage anything. Administrators can turn it off for everyone with <code>permissions.disableBypassPermissionsMode: "disable"</code>, which works best in managed settings because users can't override it.
+  </div>
+  <div class="callout info">
+    <b>Deny rules still apply in every mode, including <code>bypassPermissions</code>.</b> A mode doesn't cancel them. The danger of a permissive mode is everything <i>else</i> running without a prompt, while the deny list is the only thing left standing.
+  </div>
+
+  <h3>What a <code>Read</code> deny rule covers, and what it doesn't</h3>
+  <div class="grid-2">
+    <div class="qcard">
+      <h4>Covered</h4>
+      <ul>
+        <li>Claude's built-in file tools</li>
+        <li>Grep and Glob (best effort)</li>
+        <li>Files named in <code>@</code> mentions</li>
+        <li>Bash file commands Claude Code recognizes: <code>cat</code>, <code>head</code>, <code>tail</code>, <code>sed</code>, <code>tee</code></li>
+        <li>Bash redirections such as <code>&gt; file</code> and <code>&lt; file</code></li>
+      </ul>
+    </div>
+    <div class="qcard">
+      <h4>Not covered</h4>
+      <ul>
+        <li>A command that reads files without naming them, such as <code>grep -r pattern .</code> run from the folder that holds the file</li>
+        <li>A script that opens the file itself, such as Python or Node</li>
+      </ul>
+      <p>For a hard, OS-level block, use the <b>sandbox</b>. To apply your own logic to the full command, use a <b>PreToolUse hook</b>.</p>
+    </div>
+  </div>
+  <p>Bash rules have a similar limit: <code>Bash(curl *)</code> stops <code>curl https://example.com</code> but not <code>/usr/bin/curl ...</code> or <code>sh -c 'curl ...'</code>. A rule covers the form Claude usually writes, and it isn't a security boundary.</p>
+  <p><b>Hooks can't override rules.</b> If a deny rule matches, the call stays blocked even when a PreToolUse hook returns "allow".</p>
+
+  <h3>Where permissions live: shared vs personal</h3>
+  <div class="tablewrap"><table>
+    <tr><th>File</th><th>Who it affects</th><th>In git?</th></tr>
+    <tr><td class="nw"><code>.claude/settings.json</code></td><td>Everyone who uses the repo</td><td>Yes</td></tr>
+    <tr><td class="nw"><code>.claude/settings.local.json</code></td><td>Only you, in this project</td><td><b>No</b></td></tr>
+    <tr><td class="nw"><code>~/.claude/settings.json</code></td><td>Only you, in every project</td><td>No</td></tr>
+    <tr><td class="nw">Managed settings</td><td>Everyone in the organization, and they can't override it</td><td>Set by IT</td></tr>
+  </table></div>
+  <p><b>The rule for shared files:</b> put in <code>.claude/settings.json</code> only what the whole team should live with. A permissive mode, a broad allow, a secret, or a path from your own machine all belong in <code>settings.local.json</code>.</p>
+
+  <h3>In this project</h3>
+  <div class="card">
+    <p>The shared <code>.claude/settings.json</code> holds the project hooks. Personal approvals for temporary files belong in the gitignored <code>settings.local.json</code>, not in a file shared with every contributor. Open <code>/permissions</code> to see every rule and where it came from.</p>
+  </div>
+
+  <div class="practice" data-lesson="permissions"></div>
+</section>
+
+<!-- ======================= SUBAGENTS ======================= -->
+<section class="panel" role="tabpanel" id="panel-agents">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Subagents</h2>
+  <p class="lead">A specialized assistant that works in its own isolated context and returns only its result.</p>
+  <span class="status ok">Confirmed live</span>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>Starts with a <b>clean slate</b>: no conversation history, no files you accumulated.</li>
+    <li>Can have its <b>own restricted tools</b>, for example read-only.</li>
+    <li>Only the final report comes back, so your main chat stays small.</li>
+    <li>A rule adds context that Claude applies itself. A subagent is delegation: the work happens elsewhere.</li>
+  </ul>
+
+  <h3>In this project</h3>
+<pre><code>---
+name: python-reviewer
+description: Reviews Python files for type hints, [py-rule] docstrings...
+tools: Read, Grep, Glob     # read-only
+model: inherit
+---
+You are a Python code reviewer. You start with a clean context...</code></pre>
+  <p><code>.claude/agents/python-reviewer.md</code>. The body is its whole system prompt; the description tells Claude when to delegate. Its report starts with <code>Reviewed by python-reviewer (isolated context)</code>. Manage it with <code>/agents</code>.</p>
+
+  <div class="practice" data-lesson="agents"></div>
+</section>
+
+<!-- ======================= SKILLS ======================= -->
+<section class="panel" role="tabpanel" id="panel-skills">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Skills</h2>
+  <p class="lead">A reusable procedure that costs almost no context until it is needed.</p>
+  <span class="status warn">Built, not confirmed</span>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>A folder <code>.claude/skills/&lt;name&gt;/SKILL.md</code>: frontmatter with <code>name</code> and <code>description</code>, then instructions. It can include scripts or templates.</li>
+    <li>Only name and description are loaded at the start. The full text loads when the task matches, or when you type <code>/name</code>.</li>
+    <li>Runs in your <b>main</b> chat and sees everything in it, unlike a subagent.</li>
+    <li>A rule is triggered by <i>which file</i> you touch; a skill by <i>what you are doing</i>.</li>
+  </ul>
+
+  <h3>In this project</h3>
+<pre><code>---
+name: add-function
+description: Add a new function to a Python file in src/ following the checklist.
+disable-model-invocation: true    # only you can start it
+argument-hint: &lt;file&gt; &lt;function description&gt;
+---
+Request: $ARGUMENTS
+1. Read the target file first...</code></pre>
+  <ul>
+    <li><code>disable-model-invocation: true</code>: Claude can't start it; only <code>/add-function</code> does. Use it for anything with side effects.</li>
+    <li><code>$ARGUMENTS</code> is replaced by what you type after the command.</li>
+    <li>Try <code>/add-function src/calculator.py multiply two numbers</code>. It should end with "Added with /add-function skill".</li>
+  </ul>
+
+  <h3>One SKILL.md, three runtimes</h3>
+  <p>The same skill folder can run in Claude Code, on the Messages API and through the Agent SDK. Each one finds it and runs it differently, so "runs everywhere" is something you design for.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Runtime</th><th>How the skill gets there</th><th>Where it runs</th><th>Watch out for</th></tr>
+    <tr><td class="nw"><b>Claude Code</b></td><td>Filesystem discovery: <code>.claude/skills/</code>, <code>~/.claude/skills/</code>, plugins</td><td>Your machine, with your shell and tools</td><td>It quietly works with whatever you have installed, so it's easy to depend on that by accident</td></tr>
+    <tr><td class="nw"><b>Messages API</b></td><td>Upload it with the Skills API, then list it in the request's <code>container.skills</code> (<code>type</code>, <code>skill_id</code>, <code>version</code>), up to 20 per request. The request must also include the code execution tool</td><td>Anthropic's code execution container</td><td><b>No network access</b> and <b>no package installs</b> at runtime: only pre-installed packages</td></tr>
+    <tr><td class="nw"><b>Agent SDK</b></td><td>Filesystem, from the sources in <code>settingSources</code> (TypeScript) or <code>setting_sources</code> (Python). The <code>skills</code> option limits which ones Claude may invoke</td><td>The machine running your program, from its <code>cwd</code></td><td>Setting <code>settingSources</code> yourself without <code>'project'</code> drops the project's skills. With an explicit <code>tools</code> list, include <code>"Skill"</code></td></tr>
+  </table></div>
+  <div class="callout">
+    <b>Check your course notes on beta headers.</b> Older material says the API needs beta headers such as <code>skills-2025-10-02</code> and <code>code-execution-2025-08-25</code>. Today's docs say the Skills API is out of beta and the code execution tool needs no <code>anthropic-beta</code> header. The old headers still work, but new code doesn't need them. What doesn't change is that the API runs skills inside a code execution container.
+  </div>
+
+  <h3>Designing a skill that ports</h3>
+  <ul>
+    <li>Write a <b>description</b> that says what the skill does and when to use it, without mentioning your own setup.</li>
+    <li><b>Bundle</b> scripts and reference files in the skill folder and refer to them relative to it, never by an absolute path.</li>
+    <li>If it must run on the API, include no network calls and no <code>pip install</code> step.</li>
+    <li>Don't assume a particular OS, shell, or local tool such as <code>gh</code>, <code>jq</code> or PowerShell.</li>
+    <li>Test it in each runtime you target, not only the terminal you wrote it in.</li>
+  </ul>
+  <div class="callout info">
+    <b>Subagents start clean, including skills.</b> A subagent doesn't see the skills you already used in the main chat. To give it a skill's full text at startup, list the skill in the subagent's <code>skills</code> frontmatter field. Otherwise it can only discover one and invoke it through the Skill tool. Built-in agents don't preload skills, and a skill with <code>disable-model-invocation: true</code>, such as this project's <code>add-function</code>, can't be preloaded.
+  </div>
+
+  <div class="practice" data-lesson="skills"></div>
+</section>
+
+<!-- ======================= PLUGINS ======================= -->
+<section class="panel" role="tabpanel" id="panel-plugins">
+  <div class="eyebrow">Configure Claude Code</div>
+  <h2>Plugins</h2>
+  <p class="lead">A folder that bundles skills, subagents and hooks so you can reuse or share them.</p>
+  <span class="status warn">Built, not confirmed</span>
+
+  <h3>Structure</h3>
+<pre><code>training-plugin/
+├── .claude-plugin/plugin.json         &lt;- manifest
+├── .claude-plugin/marketplace.json    &lt;- lets others install it from GitHub
+├── skills/add-function/SKILL.md
+├── agents/python-reviewer.md
+├── hooks/hooks.json
+└── scripts/block_prod_config.py, log_edit.py</code></pre>
+
+  <h3>Key points</h3>
+  <ul>
+    <li>Hook paths use <code>${CLAUDE_PLUGIN_ROOT}</code>, because the plugin can live anywhere.</li>
+    <li>Skills are namespaced: <code>/training-plugin:add-function</code>.</li>
+    <li>Not included: rules, CLAUDE.md, and never <code>settings.local.json</code>.</li>
+    <li>Test locally with <code>claude --plugin-dir ./training-plugin</code>, then <code>/plugin</code> and <code>/hooks</code>.</li>
+    <li><b>Validate before you ship:</b> <code>claude plugin validate ./training-plugin</code> checks the manifest and every path, and reports misplaced files. Add <code>--strict</code> to make warnings fail. Only <code>plugin.json</code> goes in <code>.claude-plugin/</code>; skills, agents and hooks sit at the plugin root.</li>
+    <li>Share by pushing the folder to its own GitHub repo (start private). Others run <code>/plugin marketplace add &lt;user&gt;/training-plugin</code>.</li>
+  </ul>
+
+  <h3>Before you share it</h3>
+  <ul>
+    <li><b>Paths stay inside the plugin.</b> A path that resolves outside the plugin root, usually one containing <code>..</code>, doesn't load, and <code>claude plugin validate</code> reports it. Use <code>${CLAUDE_PLUGIN_ROOT}</code> for bundled files and <code>${CLAUDE_PLUGIN_DATA}</code> for things the plugin installs or caches.</li>
+    <li><b>Declare the values it needs.</b> Put required settings, such as an endpoint or a token, in <code>userConfig</code> in <code>plugin.json</code>. Claude Code then prompts for them when the plugin is enabled. <code>sensitive: true</code> masks the value and keeps it in secure storage rather than <code>settings.json</code>. MCP config and skill content refer to it as <code>${user_config.KEY}</code>.</li>
+    <li><b>Document what you can't prompt for</b>, such as a tool that must be on <code>PATH</code>, and consider a <code>SessionStart</code> hook that checks for it and prints a clear message.</li>
+    <li><b>Test the install on a clean machine</b>, a fresh user account or a container. Install it from the marketplace, not with <code>--plugin-dir</code> from your working copy. Anything that only works on your machine shows up there.</li>
+  </ul>
+
+  <h3>In this project</h3>
+  <div class="card">
+    <p>Passes <code>claude plugin validate ./training-plugin --strict</code> and both scripts were tested outside Claude. It has not been loaded in a live session yet. With the plugin loaded, the project's own hooks and agent still run too, so you may see two log entries per edit.</p>
+  </div>
+
+  <div class="practice" data-lesson="plugins"></div>
+</section>
+
+<!-- ======================= MCP ======================= -->
+<section class="panel" role="tabpanel" id="panel-mcp">
+  <div class="eyebrow">Extend &amp; optimize</div>
+  <h2>MCP (Model Context Protocol)</h2>
+  <p class="lead">A running program that gives Claude new abilities. A skill tells Claude <i>how</i>; an MCP server gives it the <i>ability</i>.</p>
+  <span class="status ok">Confirmed live</span>
+
+  <h3>Client vs server</h3>
+  <p>MCP has two sides. They talk with a fixed set of messages, so any client can use any server.</p>
+
+  <div class="duo">
+    <div class="role client">
+      <div class="role-tag">MCP CLIENT</div>
+      <h4>Claude Code</h4>
+      <p>The app that wants new abilities. It has an MCP client built in.</p>
+      <ul>
+        <li>Starts the server</li>
+        <li>Asks what it offers</li>
+        <li>Sends tool calls, reads resources, fetches prompts</li>
+        <li>Decides how to show them to you</li>
+      </ul>
+    </div>
+    <div class="wire">
+      <span class="sw">↔</span>
+      <b>MCP protocol</b>
+      <span>the client asks, the server answers</span>
+    </div>
+    <div class="role server">
+      <div class="role-tag">MCP SERVER</div>
+      <h4>notes_server.py</h4>
+      <p>The program that offers the abilities. It does the real work.</p>
+      <ul>
+        <li>Lists its tools, resources and prompts</li>
+        <li>Runs the code behind a tool</li>
+        <li>Sends back the result</li>
+        <li>Knows nothing about the model or your chat</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <b>Think of a web browser and a web server.</b> The browser asks for pages and the server serves them. Any browser works with any web server because both follow the same protocol (HTTP). Here, Claude Code is the browser, <code>notes_server.py</code> is the web server, and MCP is the protocol.
+  </div>
+
+  <div class="tablewrap"><table>
+    <tr><th></th><th>MCP client</th><th>MCP server</th></tr>
+    <tr><td class="nw"><b>Job</b></td><td>Asks for things</td><td>Offers things</td></tr>
+    <tr><td class="nw"><b>In this project</b></td><td>Claude Code</td><td><code>mcp-server/notes_server.py</code></td></tr>
+    <tr><td class="nw"><b>Who writes it</b></td><td>Already built into the app (you can also write your own)</td><td>You, or you install one someone else wrote</td></tr>
+    <tr><td class="nw"><b>Where it is set up</b></td><td><code>.mcp.json</code> lists which servers to connect to</td><td>The Python file itself: <code>@mcp.tool()</code>, <code>@mcp.resource()</code>, <code>@mcp.prompt()</code></td></tr>
+    <tr><td class="nw"><b>Starts</b></td><td>When the app starts</td><td>Launched by the client (stdio), or already running somewhere (remote, over HTTP)</td></tr>
+    <tr><td class="nw"><b>Decides</b></td><td>Whether to ask your permission, and how resources and prompts are shown (<code>@</code> mentions, <code>/</code> commands)</td><td>What exists, and what each tool does</td></tr>
+  </table></div>
+
+  <h3>What happens when you ask "search my notes for hook"</h3>
+  <ol>
+    <li>When Claude Code starts, its <b>client</b> launches the server and asks what it offers. The tool list ends up in the model's context.</li>
+    <li>You type the request. The <b>model</b> sees the tool list and decides to call <code>search_notes</code>.</li>
+    <li>The <b>client</b> sends that call to the server. Claude Code usually asks your permission first.</li>
+    <li>The <b>server</b> runs the Python function and returns the matching notes.</li>
+    <li>The client passes the result back to the model, which writes your answer.</li>
+  </ol>
+  <div class="callout">
+    <b>The client is not the model.</b> The model decides what to do. The client is the connection that carries the call to the server and brings the result back.
+  </div>
+
+  <h3>Good to know</h3>
+  <ul>
+    <li><b>One server, many clients.</b> We tested <code>notes_server.py</code> with a small script of our own before Claude Code connected to it, and it worked unchanged with both.</li>
+    <li><b>One client, many servers.</b> Claude Code can connect to several servers at once, for example notes, Jira and a database.</li>
+    <li><b>The server only offers.</b> It lists resources and prompts, but each client chooses how to show them. That is why support for them varies between clients.</li>
+  </ul>
+
+  <h3>The three things a server exposes</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Kind</th><th>Triggered by</th><th>Our example</th><th>Think of it as</th></tr>
+    <tr><td><b>Tool</b></td><td>The <b>model</b></td><td><code>search_notes</code>, <code>add_note</code></td><td>A function Claude can call</td></tr>
+    <tr><td><b>Resource</b></td><td>The <b>client</b>, by address</td><td><code>notes://list</code>, <code>notes://{note_id}</code></td><td>A file attached to the chat</td></tr>
+    <tr><td><b>Prompt</b></td><td>The <b>user</b>, by name</td><td><code>summarize_note</code></td><td>A saved, vetted instruction</td></tr>
+  </table></div>
+
+  <h3>Key points</h3>
+  <ul>
+    <li><b>Direct resource</b>: fixed address. <b>Templated</b>: a parameter in the address. Use one when known data should be in context from the start.</li>
+    <li><b>Prompts</b> matter when exact wording changes the result and every user should get the same quality. They're the least used; many servers have only tools.</li>
+    <li><b>Tokens</b>: MCP can save them (code written once, work done outside the model), but tool descriptions and big results cost context. Its real value is reliability and reuse.</li>
+    <li>Use the official <code>mcp</code> SDK and pin it: in 2.x <code>FastMCP</code> was renamed <code>MCPServer</code>.</li>
+    <li>Never <code>print()</code> in a stdio server; it corrupts the messages. Use <code>logging</code>.</li>
+  </ul>
+
+  <h3>In this project</h3>
+  <ul>
+    <li><code>mcp-server/notes_server.py</code>, registered in <code>.mcp.json</code> with relative paths.</li>
+    <li>Tool: ask "search my notes for hook". Resource: type <code>@</code> and pick <code>notes:list</code>. Prompt: <code>/mcp__notes__summarize_note 2</code>. Status: <code>/mcp</code>.</li>
+    <li>"Connection closed" at first: the command path was likely wrong (an empty <code>${CLAUDE_PROJECT_DIR}</code>, not proven). Relative paths fixed it.</li>
+  </ul>
+
+  <div class="practice" data-lesson="mcp"></div>
+</section>
+
+<!-- ======================= TRANSPORT & SCOPE ======================= -->
+<section class="panel" role="tabpanel" id="panel-transport">
+  <div class="eyebrow">Extend &amp; optimize</div>
+  <h2>MCP transport &amp; scope</h2>
+  <p class="lead">Two separate choices every time you add a server: <b>how</b> Claude Code talks to it (transport), and <b>who</b> gets it (scope). Most mistakes come from mixing the two up.</p>
+  <span class="status warn">Reference from the Claude Code docs</span>
+
+  <div class="callout info">
+    <b>The two questions.</b> Transport answers "<i>where does the server run?</i>" Scope answers "<i>who should have it?</i>" They are independent: an HTTP server can be private to you, and a stdio server can be shared with the whole team.
+  </div>
+
+  <h3>Part 1: Transport</h3>
+  <p>A transport is the channel between the MCP client (Claude Code) and the MCP server. Pick it by <b>where the server runs</b>.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>Transport</th><th>What it is</th><th>Use it when</th><th>Add it with</th></tr>
+    <tr>
+      <td class="nw"><b>stdio</b></td>
+      <td>Claude Code <b>launches the server as a process on your machine</b> and talks over its standard input and output.</td>
+      <td>The server is local: a script, a database on your laptop, anything that needs your machine's files or tools.</td>
+      <td><code>claude mcp add &lt;name&gt; -- &lt;command&gt;</code></td>
+    </tr>
+    <tr>
+      <td class="nw"><b>HTTP</b></td>
+      <td>The server is <b>already running somewhere</b> and Claude Code connects to its URL.</td>
+      <td>The server is remote: a cloud service, or something your company hosts. This is the recommended option for remote servers.</td>
+      <td><code>claude mcp add --transport http &lt;name&gt; &lt;url&gt;</code></td>
+    </tr>
+    <tr>
+      <td class="nw"><b>SSE</b> <span class="status warn" style="margin:0 0 0 4px;padding:0 8px">deprecated</span></td>
+      <td>An older way of connecting to a remote server (Server-Sent Events).</td>
+      <td>Only a legacy server that offers nothing else. Use HTTP wherever you can.</td>
+      <td><code>claude mcp add --transport sse &lt;name&gt; &lt;url&gt;</code></td>
+    </tr>
+  </table></div>
+
+  <div class="duo">
+    <div class="role client">
+      <div class="role-tag">STDIO</div>
+      <h4>Claude Code starts it</h4>
+      <p>Like running a script yourself, but Claude Code does it and reads the output.</p>
+      <ul>
+        <li>Runs on <b>your</b> machine</li>
+        <li>No network, no URL</li>
+        <li>Dies when Claude Code exits</li>
+        <li>This is what <code>notes_server.py</code> uses</li>
+      </ul>
+    </div>
+    <div class="wire">
+      <b>vs</b>
+      <span>who starts the server?</span>
+    </div>
+    <div class="role server">
+      <div class="role-tag">HTTP</div>
+      <h4>It is already running</h4>
+      <p>Like opening a website: Claude Code only needs the address.</p>
+      <ul>
+        <li>Runs <b>anywhere</b>: cloud, company server</li>
+        <li>Reached by URL, often with a token in a header</li>
+        <li>Many people can share one running server</li>
+        <li>Keeps running when Claude Code exits</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Why not always HTTP?</b> A local tool, such as a SQLite file on your laptop, has no reason to be on the network. Putting it behind a URL adds hosting, authentication and exposure for no benefit. <b>Why not always stdio?</b> A service your whole team uses has to run in one place; each person starting their own copy would defeat the point.
+  </div>
+  <p>Claude Code also supports a WebSocket transport (<code>ws</code>), for servers that push events on their own. It can only be configured as JSON, and it is rarer, so this lesson focuses on the three above.</p>
+
+  <h3>Part 2: Scope</h3>
+  <p>Scope decides <b>where the server's configuration is stored</b>, and therefore who gets it. The default is <b>local</b>.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>Scope</th><th>Stored in</th><th>Who gets it</th><th>Use it for</th></tr>
+    <tr>
+      <td class="nw"><b>Local</b> <small>(default)</small></td>
+      <td><code>~/.claude.json</code>, under this project</td>
+      <td>Only you, only in this project</td>
+      <td>Personal tools, experiments, anything with credentials you don't want in git</td>
+    </tr>
+    <tr>
+      <td class="nw"><b>Project</b></td>
+      <td><code>.mcp.json</code> in the project root</td>
+      <td>Everyone who clones the repo (it is committed)</td>
+      <td>Servers the whole team needs for this repo</td>
+    </tr>
+    <tr>
+      <td class="nw"><b>User</b></td>
+      <td><code>~/.claude.json</code>, top level</td>
+      <td>Only you, in <b>all</b> your projects</td>
+      <td>Personal tools you want everywhere</td>
+    </tr>
+    <tr>
+      <td class="nw"><b>Enterprise</b> <small>(managed)</small></td>
+      <td>Managed settings, set by the organization</td>
+      <td>Every user in the organization</td>
+      <td>Servers IT must deploy, or must block</td>
+    </tr>
+  </table></div>
+
+  <ul>
+    <li><b>Project scope asks for approval.</b> Claude Code prompts before using a server from <code>.mcp.json</code>, because the file came from the repo. That is why our notes server asked you to approve it.</li>
+    <li><b>Never put secrets in <code>.mcp.json</code></b>, since it is committed. Use environment variables instead (<code>${API_KEY}</code>), or local scope.</li>
+    <li><b>Precedence:</b> if the same server name exists in several scopes, only the highest one is used and they are not merged. Order, highest first: managed, local, project, user.</li>
+    <li>Managed configuration can also be an allowlist or a denylist, so IT can restrict which servers people may connect to.</li>
+  </ul>
+
+  <h3>Part 3: Pick both for a scenario</h3>
+  <p>Ask the two questions in order, then pick one answer for each.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Scenario</th><th>Transport</th><th>Scope</th><th>Because</th></tr>
+    <tr><td>A SQLite query tool used only on your laptop</td><td>stdio</td><td>Local</td><td>It runs on your machine, and only you use it</td></tr>
+    <tr><td>A code search service on company infrastructure, for the whole engineering team</td><td>HTTP</td><td>Project (<code>.mcp.json</code>)</td><td>It is hosted remotely, and the repo's config shares it with the team</td></tr>
+    <tr><td>An experimental scraper you are testing this week on one repo</td><td>stdio or HTTP</td><td>Local</td><td>Experimental and not ready to share means local scope. The scenario never says where it runs, so either transport could fit</td></tr>
+    <tr><td>A security scanner IT must deploy to every developer</td><td>HTTP</td><td>Enterprise (managed)</td><td>It is hosted centrally, and it must reach everyone without relying on each repo</td></tr>
+  </table></div>
+
+  <div class="callout">
+    <b>How to read the checkpoint.</b> Each answer bundles a transport with a scope, and each of the four options fits exactly one scenario. Find the scope first: personal or experimental means local, the whole team means project, the whole organization means enterprise. Then look for where the server runs. If the scenario says it runs on your machine, that is stdio. If it says it is hosted, that is HTTP. If it says <i>nothing</i> about where it runs, as in the experimental scraper, no transport is forced, and the "stdio or HTTP" option is the right one. Don't pick a transport the scenario never mentions.
+  </div>
+
+  <h3>In this project</h3>
+  <ul>
+    <li>Our <code>notes</code> server is <b>stdio + project</b>: Claude Code starts <code>notes_server.py</code> from <code>.mcp.json</code>, and anyone who clones the repo gets it. A real private server with a token would be <b>local</b> scope instead.</li>
+    <li>To see what is configured: <code>claude mcp list</code> in a terminal, or <code>/mcp</code> inside Claude Code.</li>
+  </ul>
+
+  <div class="practice" data-lesson="transport"></div>
+</section>
+
+<!-- ======================= CACHING ======================= -->
+<section class="panel" role="tabpanel" id="panel-caching">
+  <div class="eyebrow">Extend &amp; optimize</div>
+  <h2>Prompt caching</h2>
+  <p class="lead">Pay once to process a stable prefix, then reuse it at about a tenth of the price.</p>
+  <span class="status ok">Confirmed live (by script)</span>
+
+  <h3>Key points</h3>
+  <ul>
+    <li><b>Prefix match</b>: one changed character before the cache point means a miss and a fresh write.</li>
+    <li>Turn it on per request with <code>"cache_control": {"type": "ephemeral"}</code> on the last block to cache. Up to <b>4</b> breakpoints.</li>
+    <li>Lifetime is 5 minutes, refreshed on every read. Add <code>"ttl": "1h"</code> for an hour.</li>
+    <li>Short prefixes silently don't cache (minimum about 512 to 4096 tokens, depending on the model).</li>
+    <li>Silent invalidators: timestamps or ids in the prefix, unsorted JSON, changing tools or model.</li>
+  </ul>
+  <p>The request is always processed in this order, so put stable content first:</p>
+  <div class="order"><span>1. tools</span><span>2. system</span><span>3. messages</span></div>
+
+  <h3>Cost compared with normal input</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Kind</th><th>Price</th><th>Field in <code>response.usage</code></th></tr>
+    <tr><td>Normal input</td><td>1.0x</td><td><code>input_tokens</code></td></tr>
+    <tr><td>Write, 5 minutes</td><td>1.25x</td><td><code>cache_creation_input_tokens</code></td></tr>
+    <tr><td>Write, 1 hour</td><td>2.0x</td><td><code>cache_creation_input_tokens</code></td></tr>
+    <tr><td>Read</td><td>about 0.1x</td><td><code>cache_read_input_tokens</code></td></tr>
+  </table></div>
+
+  <h3>What we measured</h3>
+  <p>One run of <code>caching-example/cache_demo.py</code> on Haiku 5.5 through the company gateway.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Style</th><th>Where the marker goes</th><th>Result</th></tr>
+    <tr><td><b>automatic</b></td><td>On the request; the API picks the block</td><td class="bad">Nothing cached</td></tr>
+    <tr><td><b>manual</b></td><td>On the system block</td><td class="bad">Wrote twice, no read</td></tr>
+    <tr><td><b>ttl</b></td><td>Same, with <code>"ttl": "1h"</code></td><td class="bad">Wrote twice, no read</td></tr>
+    <tr><td><b>tools</b></td><td>On the last tool</td><td class="bad">Wrote twice, no read</td></tr>
+    <tr><td><b>conversation</b></td><td>Last block of the newest turn</td><td class="ok">Read the history each turn</td></tr>
+    <tr><td><b>shared_prefix</b></td><td>End of the shared document</td><td class="ok">Read on call 2</td></tr>
+    <tr><td><b>multi</b></td><td>Tools, system and document</td><td class="ok">Read all; partial hit on a new document</td></tr>
+  </table></div>
+  <div class="callout">The misses are unexplained. My unverified guess is the gateway, so treat caching there as best-effort. Run one style with <code>.venv\Scripts\python.exe caching-example\cache_demo.py shared_prefix</code>.</div>
+
+  <div class="practice" data-lesson="caching"></div>
+</section>
+
+<!-- ======================= AI CODE REVIEW ======================= -->
+<section class="panel" role="tabpanel" id="panel-codereview">
+  <div class="eyebrow">Review</div>
+  <h2>AI code review</h2>
+  <p class="lead">An AI review gives you findings to triage, not a verdict to apply. Trust what it can prove from the code in front of it, test what it can only infer, and keep a person between a finding and anything hard to undo.</p>
+  <span class="status warn">Checked against the Claude Code docs</span>
+
+  <h3>Sort every finding into one of two piles</h3>
+  <div class="grid-2">
+    <div class="qcard">
+      <h4>Provable from the diff</h4>
+      <p>The evidence is on the lines it cites: a missing null or <code>None</code> check, a file or connection never closed on the error path, an off-by-one, a variable used before it is set, a swallowed exception.</p>
+      <p><b>Do:</b> open the cited lines and confirm. If the code shows it, fix it.</p>
+    </div>
+    <div class="qcard">
+      <h4>A claim about runtime or another system</h4>
+      <p>"This will time out under load", "the caller already validates this", "this breaks the billing service", "this query is slow in production".</p>
+      <p><b>Do:</b> treat it as a hypothesis. Write a test, run it, check logs or metrics, or ask the team that owns the other system before you act on it.</p>
+    </div>
+  </div>
+  <div class="callout info">
+    <b>Why the split works.</b> The Code Review docs say a review "works from reading the diff and the surrounding code, without building or running your code". Anything that depends on running the code, on real data or on another service is outside what the reviewer saw, so it can't have proved it.
+  </div>
+
+  <h3>Where the human gate goes</h3>
+  <p>Put the check where a finding turns into an action that is hard to reverse, not on every comment.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Step</th><th>Easy to undo?</th><th>Gate</th></tr>
+    <tr><td>Reading findings, posting review comments</td><td>Yes</td><td>None needed</td></tr>
+    <tr><td>Applying a suggested fix on your branch</td><td>Yes, with git</td><td>Read the diff before you commit</td></tr>
+    <tr><td>Merging, deploying, migrating or deleting data, rotating credentials</td><td><b>No</b></td><td><b>A person decides</b>, with the evidence in front of them</td></tr>
+  </table></div>
+  <ul>
+    <li>On its own, Code Review doesn't approve or block a pull request, and its check run doesn't conclude as a failure. Read "no findings" as "nothing found", not "safe": the docs warn that a review can miss bugs.</li>
+    <li>If Claude applies fixes for you, keep the irreversible step out of its reach: an <code>ask</code> rule such as <code>Bash(git push *)</code>, and no bypass mode.</li>
+  </ul>
+
+  <h3>Raise accuracy: give it your conventions</h3>
+  <ul>
+    <li>Without them, the reviewer guesses. Is a bare <code>except</code> allowed in <code>scripts/</code>? Must every docstring start with <code>[py-rule]</code>? Is <code>os.path</code> banned? Every guess is a possible false positive or a missed finding.</li>
+    <li><b>Code Review</b> reads <code>REVIEW.md</code> and <code>CLAUDE.md</code> from your repository. It takes <code>REVIEW.md</code> from the base or default branch, never from the pull request's own changes, so a pull request can't rewrite its own review rules.</li>
+    <li><b>Your own reviewer</b> (a subagent or skill): put the conventions in its prompt, or in CLAUDE.md and rules files, which custom subagents load too.</li>
+    <li>Ask for evidence: each finding should cite <code>file:line</code> and say whether the code proves it or it needs a runtime check.</li>
+  </ul>
+
+  <h3>Ways to get a review</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Option</th><th>Starts when</th><th>Runs on</th><th>Who can use it</th></tr>
+    <tr><td class="nw">Code Review</td><td>Pull request activity, or an <code>@claude review</code> comment</td><td>Anthropic infrastructure</td><td>Team and Enterprise plans, GitHub repositories</td></tr>
+    <tr><td class="nw"><code>/code-review</code></td><td>You run it on your branch</td><td>Your Claude Code session</td><td>Any plan</td></tr>
+    <tr><td class="nw">GitHub Actions or GitLab CI</td><td>Your pipeline's events</td><td>Your own CI runners</td><td>Anyone with an API key or cloud provider credentials</td></tr>
+    <tr><td class="nw">Your own subagent or skill</td><td>You or Claude invoke it</td><td>Wherever Claude Code runs</td><td>Anyone who writes one</td></tr>
+  </table></div>
+
+  <h3>In this project</h3>
+  <div class="card">
+    <p><code>python-reviewer</code> already gets two things right: it is read-only (<code>Read, Grep, Glob</code>), and it reports each issue as <code>file:line - problem - suggested fix</code>, so you can check every finding on the line it cites. It can't run code, so any claim it makes about runtime behavior is unverified by design. Its last line, <code>Verdict: needs changes</code>, sums up its findings. It isn't permission to merge, and it isn't a reason to apply every fix.</p>
+  </div>
+
+  <div class="practice" data-lesson="codereview"></div>
+</section>
+
+<!-- ======================= CONFIG BUG HUNT ======================= -->
+<section class="panel" role="tabpanel" id="panel-bughunt">
+  <div class="eyebrow">Review</div>
+  <h2>Config bug hunt</h2>
+  <p class="lead">A cumulative checkpoint: read a few config files, spot what is wrong in each layer, and say in one sentence what it does at runtime. The same handful of mistakes keep coming back, so this lesson turns them into a checklist.</p>
+  <span class="status warn">Checked against the Claude Code docs</span>
+
+  <h3>How to answer</h3>
+  <div class="callout info">
+    <b>Two parts, every time.</b> <b>Bug:</b> say exactly what is wrong, naming the setting or line. <b>Runtime:</b> one sentence on what happens when it runs, saying <i>who</i> is affected and <i>what</i> fails or leaks. "It's insecure" is not an answer; "everyone who clones the repo can read the production token" is.
+  </div>
+
+  <h3>The five-question review</h3>
+  <p>Run these five questions over any config file before you trust it. Together they catch almost every planted bug.</p>
+  <div class="qcard">
+    <h4>1. Is there a secret in it?</h4>
+    <p><b>Look for:</b> tokens, keys, passwords, <code>Bearer sk-...</code>, an <code>env</code> block with real values.</p>
+    <p><b>Fix:</b> reference an environment variable (<code>${NAME}</code>), or move it to a file that isn't committed, such as <code>settings.local.json</code>. If it was ever committed, rotate it, because git history keeps it.</p>
+  </div>
+  <div class="qcard">
+    <h4>2. Is there a path that only works on one machine?</h4>
+    <p><b>Look for:</b> <code>/Users/priya/...</code>, <code>C:\Users\...</code>, or an absolute path to your own virtual environment.</p>
+    <p><b>Fix:</b> a relative path, or the right variable for the layer: <code>${CLAUDE_SKILL_DIR}</code> in a skill, <code>${CLAUDE_PLUGIN_ROOT}</code> in a plugin, <code>${CLAUDE_PROJECT_DIR}</code> for the project.</p>
+  </div>
+  <div class="qcard">
+    <h4>3. Is it too permissive for a shared file?</h4>
+    <p><b>Look for:</b> <code>defaultMode: "bypassPermissions"</code>, a bare <code>Bash</code> allow rule, or personal approvals in <code>.claude/settings.json</code>.</p>
+    <p><b>Fix:</b> keep shared files narrow, and put personal or permissive settings in <code>settings.local.json</code>. Let IT disable bypass mode in managed settings.</p>
+  </div>
+  <div class="qcard">
+    <h4>4. Does the guard really guard?</h4>
+    <p><b>Look for:</b> a hook that blocks with <code>exit 1</code> instead of <code>exit 2</code>, a <code>Read</code> deny that a script can sidestep, or a <code>Bash(curl *)</code> deny that <code>/usr/bin/curl</code> slips past.</p>
+    <p><b>Fix:</b> use <code>exit 2</code> to block, a sandbox for OS-level enforcement, and a PreToolUse hook when you need your own logic.</p>
+  </div>
+  <div class="qcard">
+    <h4>5. Right place, right key?</h4>
+    <p><b>Look for:</b> <code>path:</code> instead of <code>paths:</code>, a skill or hook inside <code>.claude-plugin/</code>, a remote MCP server without <code>type</code>, a plugin path that doesn't start with <code>./</code>.</p>
+    <p><b>Fix:</b> check against the docs, then run the validators below.</p>
+  </div>
+
+  <h3>The same mistakes, by layer</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Layer</th><th>Typical bugs</th></tr>
+    <tr><td class="nw"><b>Claude Code configuration</b><br><small>settings, rules, hooks</small></td><td>Permissive mode or broad allow in a shared file. A hook exiting 1 instead of 2. A rule key typo that leaves it unscoped. Personal paths or tokens in <code>settings.json</code>.</td></tr>
+    <tr><td class="nw"><b>Plugin or packaging</b><br><small>skills, plugins</small></td><td>Absolute or machine-specific paths. <code>$CLAUDE_PROJECT_DIR</code> inside a plugin script instead of <code>${CLAUDE_PLUGIN_ROOT}</code>. Components inside <code>.claude-plugin/</code>. Paths in the manifest that don't start with <code>./</code> or that leave the plugin folder.</td></tr>
+    <tr><td class="nw"><b>MCP or authentication</b><br><small>.mcp.json</small></td><td>A hardcoded token in a committed file. A remote server with a URL but no <code>type</code>. A secret-bearing server at project scope. An absolute path in a stdio command.</td></tr>
+  </table></div>
+
+  <h3>Tools that catch these for you</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Tool</th><th>What it checks</th></tr>
+    <tr><td class="nw"><code>claude plugin validate ./my-plugin</code></td><td>The manifest, every component path, and MCP entries. It warns when a header value looks like a literal credential. Add <code>--strict</code> to make warnings fail.</td></tr>
+    <tr><td class="nw"><code>/permissions</code></td><td>Every permission rule and the settings file it came from</td></tr>
+    <tr><td class="nw"><code>/hooks</code>, <code>/mcp</code>, <code>/memory</code></td><td>Registered hooks, MCP servers and their status, and loaded rules</td></tr>
+    <tr><td class="nw"><code>claude mcp list</code></td><td>Configured MCP servers, from a terminal</td></tr>
+    <tr><td class="nw">A quick search before committing</td><td><code>grep -rnE "sk-|Bearer |/Users/" .claude .mcp.json</code> finds tokens and personal paths. Skip your own <code>settings.local.json</code> so the token isn't printed.</td></tr>
+  </table></div>
+  <div class="card">
+    <p><b>Example from this project.</b> Machine-specific temporary-folder approvals do not belong in the shared settings file: they expose local paths and affect everyone who clones the repo. Our <code>training-plugin</code> passes <code>claude plugin validate --strict</code>.</p>
+  </div>
+
+  <h3>The checkpoint, solved</h3>
+  <p>The three files from the cumulative task, one bug in each layer.</p>
+
+  <div class="card bugfile">
+    <h4 style="margin:0 0 6px">File 1: <code>.claude/settings.json</code> <span class="status warn" style="margin:0 0 0 6px">configuration layer</span></h4>
+<pre><code>{ "permissions": { "defaultMode": "bypassPermissions", "deny": ["Read(.env.production)"] } }</code></pre>
+    <div class="answer-row"><b>Bug</b><span><code>defaultMode: "bypassPermissions"</code> in a shared settings file.</span></div>
+    <div class="answer-row"><b>Runtime</b><span>Every session in this repo starts with permission prompts and safety checks off, so Claude runs commands and edits files, even in protected paths such as <code>.git</code> and <code>.claude</code>, without asking, and the single <code>Read(.env.production)</code> deny rule is the only guard left.</span></div>
+    <div class="answer-row"><b>Fix</b><span>Remove <code>defaultMode</code> (or use <code>default</code>) and keep the deny rule. Use bypass mode only inside a container or VM, and let IT block it with <code>disableBypassPermissionsMode</code>.</span></div>
+    <div class="callout">
+      <b>Check your course notes on this one.</b> Today's docs say deny rules <i>still block</i> in bypass mode, so the deny rule isn't ignored. If the course expects "the deny rule is ignored", that doesn't match the docs. The answer that holds either way is the one above: bypass mode removes the safety net, and it is set in a file the whole team shares.
+    </div>
+  </div>
+
+  <div class="card bugfile">
+    <h4 style="margin:0 0 6px">File 2: <code>.claude/skills/migration-validate/SKILL.md</code> <span class="status warn" style="margin:0 0 0 6px">packaging layer</span></h4>
+<pre><code>---
+name: migration-validate
+description: Validates migration scripts before they run against production.
+---
+## Steps
+1. Run: /Users/priya/scripts/validate-migration.sh
+2. Report validation results.</code></pre>
+    <div class="answer-row"><b>Bug</b><span>A hardcoded absolute path into one person's home folder.</span></div>
+    <div class="answer-row"><b>Runtime</b><span>That script exists only on Priya's machine, so on anyone else's, and on Windows, the command fails with file not found and the production validation never runs.</span></div>
+    <div class="answer-row"><b>Fix</b><span>Bundle the script in the skill folder and call it with <code>${CLAUDE_SKILL_DIR}/scripts/validate-migration.sh</code>, which works whatever the current directory is.</span></div>
+  </div>
+
+  <div class="card bugfile">
+    <h4 style="margin:0 0 6px">File 3: <code>.mcp.json</code> <span class="status warn" style="margin:0 0 0 6px">MCP / authentication layer</span></h4>
+<pre><code>{
+  "mcpServers": {
+    "data-warehouse": {
+      "type": "http",
+      "url": "https://warehouse.example.com/mcp",
+      "headers": { "Authorization": "Bearer [example token]" }
+    }
+  }
+}</code></pre>
+    <div class="answer-row"><b>Bug</b><span>A production bearer token written into a committed file.</span></div>
+    <div class="answer-row"><b>Runtime</b><span>Everyone with access to the repo, including its git history and every clone, can read the production warehouse credential, and it can't be changed per person or revoked without editing the repo.</span></div>
+    <div class="answer-row"><b>Fix</b><span>Use <code>"Authorization": "Bearer ${WAREHOUSE_TOKEN}"</code>, set that variable in each developer's environment, and rotate the token that was exposed.</span></div>
+  </div>
+
+  <div class="practice" data-lesson="bughunt"></div>
+</section>
+
+<!-- ======================= ENTERPRISE SECURITY ======================= -->
+<section class="panel" role="tabpanel" id="panel-enterprise">
+  <div class="eyebrow">Deploy</div>
+  <h2>Enterprise security</h2>
+  <p class="lead">A regulated customer asks the same questions before every rollout: who is acting, where the secrets live, what gets logged, where the data goes, and whether anyone can turn the controls off. None of them is hard to answer up front. All of them are hard to retrofit after a production deployment has failed a security review.</p>
+  <span class="status warn">Checked against the Claude Code docs</span>
+
+  <h3>The questions, and what answers them</h3>
+  <div class="tablewrap"><table>
+    <tr><th>They ask</th><th>Answer with</th><th>How</th></tr>
+    <tr><td><b>Identity:</b> is the agent acting as a specific user?</td><td class="nw"><b>OAuth</b></td><td>For remote MCP servers that act for the user. Each developer signs in through <code>/mcp</code> or <code>claude mcp login &lt;name&gt;</code>, so tokens are per person and never in the repo. For Claude Code itself: SSO on Teams or Enterprise, with <code>forceLoginMethod</code> and <code>forceLoginOrgUUID</code> in managed settings to require your organization's login</td></tr>
+    <tr><td><b>Service credentials:</b> where do machine secrets live?</td><td class="nw"><b>Environment variables</b></td><td><code>"Authorization": "Bearer ${SERVICE_TOKEN}"</code> in <code>.mcp.json</code>, never a literal value. <code>apiKeyHelper</code> or an MCP <code>headersHelper</code> can fetch short-lived tokens from a vault. In a plugin, use <code>userConfig</code> with <code>sensitive: true</code></td></tr>
+    <tr><td><b>Access logging:</b> can you show what the agent did?</td><td class="nw"><b>PostToolUse hook</b></td><td>Fires after each tool call and appends what ran, and when, to an audit log. Deploy it in managed settings, because only managed settings can disable managed hooks. For metrics and events in your own collector, add OpenTelemetry (<code>CLAUDE_CODE_ENABLE_TELEMETRY=1</code>)</td></tr>
+    <tr><td><b>Data residency:</b> where is data processed and stored?</td><td class="nw"><b>Provider and region</b></td><td>Claude API: <code>inference_geo</code> (<code>"us"</code> or <code>"global"</code>) per request or as a workspace default, plus workspace geo in the Console for storage. Amazon Bedrock, Google Cloud or Microsoft Foundry: the region of your cloud account, such as <code>AWS_REGION</code></td></tr>
+    <tr><td><b>Configuration control:</b> can a developer turn this off?</td><td class="nw"><b>Managed settings</b></td><td>Deployed by IT and highest in precedence, so users can't override them. Lock keys include <code>permissions.disableBypassPermissionsMode</code>, <code>allowManagedPermissionRulesOnly</code>, <code>allowManagedHooksOnly</code> and <code>allowManagedMcpServersOnly</code></td></tr>
+  </table></div>
+
+  <h3>One managed settings file, three answers</h3>
+<pre><code>// Windows: C:\Program Files\ClaudeCode\managed-settings.json
+// macOS: /Library/Application Support/ClaudeCode/   Linux: /etc/claude-code/
+{
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "deny": ["Read(./.env)", "Read(./secrets/**)"]
+  },
+  "allowManagedHooksOnly": true,
+  "hooks": {
+    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command",
+      "command": "python \"C:/Program Files/Acme/claude-audit/log_tool_call.py\"" }] }]
+  },
+  "env": { "CLAUDE_CODE_ENABLE_TELEMETRY": "1" }
+}</code></pre>
+  <ul>
+    <li><b>Configuration control:</b> nobody can start bypass mode, and the deny rules apply in every mode.</li>
+    <li><b>Access logging:</b> the audit hook runs on every tool call, and with <code>allowManagedHooksOnly</code> only managed hooks run. That also stops project hooks such as this repo's <code>block_prod_config.py</code>, so move any you still need into managed settings.</li>
+    <li>An absolute path is fine here, because IT installs the script in the same place on every machine. A personal path in a shared repo file is a different case.</li>
+    <li>PostToolUse only sees calls that succeeded. A call blocked by a deny rule or a PreToolUse hook never reaches it, and a failed call fires <code>PostToolUseFailure</code> instead. If auditors want attempts too, log in PreToolUse as well.</li>
+    <li>Run <code>/status</code> on a developer machine to confirm which managed source is in force.</li>
+  </ul>
+
+  <div class="callout">
+    <b>Why before, not after.</b> Each answer is a setting or a short script. Retrofitting means re-issuing credentials that were already shared, redeploying configuration to every machine, and explaining to auditors why logs you never collected are missing. Settle all five answers in the design review, run the pilot with managed settings already in place, and only then go to production.
+  </div>
+
+  <h3>In this project</h3>
+  <div class="card">
+    <p>The repo has a small version of the logging answer: <code>log_edit.py</code> is a PostToolUse audit hook. It lives in <code>.claude/settings.json</code>, so any developer can edit or remove it, and an enterprise rollout would move it into managed settings. The only MCP server is a local stdio notes server with no credentials. The hooks also taught a lesson: their commands relied on <code>$CLAUDE_PROJECT_DIR</code>, which only Claude Code sets, and in another agent host the guard blocked every edit. Failing closed is the safe way to fail, but test a guard in every place it will run.</p>
+  </div>
+
+  <div class="practice" data-lesson="enterprise"></div>
+</section>
+
+<!-- ======================= SETUP ======================= -->
+<section class="panel" role="tabpanel" id="panel-setup">
+  <div class="eyebrow">Reference</div>
+  <h2>Setup lessons</h2>
+  <p class="lead">Problems we hit getting started, and their fixes.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0">"claude is not recognized"</h3>
+    <p><code>winget install Anthropic.ClaudeCode</code> put <code>claude.exe</code> in a package folder under <code>%LOCALAPPDATA%\Microsoft\WinGet\Packages\</code> but didn't add it to PATH. Add that folder to the user PATH, then fully quit VS Code, which caches the environment.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Company gateway</h3>
+    <p><code>.claude/settings.local.json</code> sets <code>ANTHROPIC_BASE_URL</code> and <code>ANTHROPIC_AUTH_TOKEN</code>. It applies only to this project, is gitignored, and replaces the login menu.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Login menu on first run</h3>
+    <p>Onboarding runs before project settings are read. Load the <code>env</code> values into the shell first:</p>
+<pre><code>(Get-Content .claude\settings.local.json -Raw | ConvertFrom-Json).env.PSObject.Properties | ForEach-Object { Set-Item "env:$($_.Name)" $_.Value }</code></pre>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">"Could not resolve authentication method"</h3>
+    <p>Plain Python scripts don't read <code>settings.local.json</code>. Run the line above in the same terminal first.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Housekeeping</h3>
+    <ul>
+      <li>The project <code>.venv</code> holds <code>mcp</code> and <code>anthropic</code>, pinned in <code>requirements.txt</code>, and is gitignored.</li>
+      <li>The gateway token was pasted into chat. Treat it as exposed and ask your admin to rotate it.</li>
+    </ul>
+  </div>
+
+  <div class="practice" data-lesson="setup"></div>
+</section>
+
+  </main>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   Exercise data. quiz: multiple choice. fill: code with [[n]] blanks.
+   Code is written as arrays of lines in single quotes so that things
+   like ${CLAUDE_PLUGIN_ROOT} and $ARGUMENTS stay literal.
+------------------------------------------------------------------- */
+const PRACTICE = {
+  overview: {
+    quiz: [
+      { q: 'Which piece runs no matter what the model decides?',
+        options: ['CLAUDE.md', 'A rule', 'A hook', 'A skill'], answer: 2,
+        why: 'A hook is your own code, run by Claude Code at a lifecycle event. The others are instructions the model reads and usually follows.' },
+      { q: 'Claude must read tickets from your company Jira. What do you need?',
+        options: ['A skill', 'An MCP server', 'A rule', 'A subagent'], answer: 1,
+        why: 'Claude cannot reach Jira on its own. An MCP server gives it that new ability; a skill could then describe how your team triages tickets.' },
+      { q: 'You want a thorough review of a big module without filling your main chat.',
+        options: ['Put the checklist in CLAUDE.md', 'A subagent', 'A PostToolUse hook', 'A scoped rule'], answer: 1,
+        why: 'A subagent works in an isolated context; only its final report comes back to the main chat.' },
+      { q: 'Which file must never be committed to git?',
+        options: ['<code>.mcp.json</code>', '<code>.claude/settings.json</code>', '<code>.claude/settings.local.json</code>', '<code>CLAUDE.md</code>'], answer: 2,
+        why: 'It holds your gateway token. That is why it is in <code>.gitignore</code>.' },
+    ],
+    fill: [
+      { title: 'Put each piece in its folder', file: 'project layout',
+        code: [
+          'CLAUDE.md                              # always-on instructions',
+          '.claude/[[0]]/python.md                # a rule',
+          '.claude/[[1]]/python-reviewer.md       # a subagent',
+          '.claude/skills/add-function/[[2]]      # a skill',
+          '[[3]]                                  # MCP server config',
+        ].join('\n'),
+        blanks: [
+          { answers: ['rules'], hint: 'The folder name is the plural of "rule".' },
+          { answers: ['agents'], hint: 'Subagents live in .claude/????s/' },
+          { answers: ['SKILL.md'], hint: 'The file name is the word "skill", in capitals, as Markdown.' },
+          { answers: ['.mcp.json'], hint: 'A JSON file at the project root, starting with a dot.' },
+        ] },
+    ],
+  },
+
+  claudemd: {
+    quiz: [
+      { q: 'When is CLAUDE.md loaded?',
+        options: ['Only when you mention it', 'At the start of every session', 'Only when matching files are touched', 'Only after running <code>/init</code>'], answer: 1,
+        why: 'It is always-on project memory. That is also why it should stay short.' },
+      { q: 'Where should a 40-step deploy procedure go?',
+        options: ['CLAUDE.md', 'A skill', '<code>settings.local.json</code>', 'A Notification hook'], answer: 1,
+        why: 'In CLAUDE.md all 40 steps cost context in every session. As a skill, only its short description is loaded until you need it.' },
+      { q: 'Which constraint belongs in CLAUDE.md rather than a scoped rule?',
+        options: ['"SQL in src/db must use explicit transactions"', '"Python files in src/ need type hints"', '"Never modify the database schema"', '"Tests in tests/ use pytest fixtures"'], answer: 2,
+        why: 'It applies everywhere. The others apply only to certain files, so they fit rules with a <code>paths</code> glob.' },
+    ],
+    fill: [
+      { title: 'Two commands for project memory', file: 'Claude Code prompt',
+        code: [
+          '> [[0]]        # create a first CLAUDE.md from the codebase',
+          '> [[1]]      # list which CLAUDE.md and rules files are loaded',
+        ].join('\n'),
+        blanks: [
+          { answers: ['/init'], hint: 'Short for "initialize".' },
+          { answers: ['/memory'], hint: 'CLAUDE.md is "project memory".' },
+        ] },
+    ],
+  },
+
+  rules: {
+    quiz: [
+      { q: 'What decides when a rule file loads?',
+        options: ['The folder it sits in', 'The <code>paths</code> field in its frontmatter', 'Its file name', 'A line in CLAUDE.md'], answer: 1,
+        why: 'Scoping comes from the frontmatter, not from file placement.' },
+      { q: '<code>.claude/rules/database/naming.md</code> has no <code>paths</code> field. When does it load?',
+        options: ['Only for files under <code>database/</code>', 'At launch, always', 'Never', 'Only when you run <code>/memory</code>'], answer: 1,
+        why: 'Without <code>paths</code> a rule loads unconditionally, with the same priority as CLAUDE.md. The subdirectory is organizational only.' },
+      { q: 'You ask about the README and <code>/memory</code> does not list <code>python.md</code>. Why?',
+        options: ['The rule is broken', 'Rules only load after a restart', 'No file matching <code>src/**/*.py</code> was touched yet', 'Rules are never shown in <code>/memory</code>'], answer: 2,
+        why: 'It loads only when Claude works with a matching file. Ask about <code>src/calculator.py</code> and check again.' },
+    ],
+    fill: [
+      { title: 'Scope this rule to Python files under src/', file: '.claude/rules/python.md',
+        code: [
+          '---',
+          '[[0]]:',
+          '  - [[1]]',
+          '---',
+          '# Python rules',
+          '- Add type hints to all function signatures.',
+        ].join('\n'),
+        blanks: [
+          { answers: ['paths'], hint: 'The frontmatter key that holds the glob list.' },
+          { answers: ['"src/**/*.py"', "'src/**/*.py'", 'src/**/*.py'], hint: 'A glob: the src folder, any depth (**), any .py file.' },
+        ] },
+    ],
+  },
+
+  hooks: {
+    quiz: [
+      { q: 'Which event can block a tool call?',
+        options: ['PostToolUse', 'PreToolUse', 'Stop', 'SessionEnd'], answer: 1,
+        why: 'PreToolUse runs before the call, so it can stop it. PostToolUse runs after; the call already happened.' },
+      { q: 'Which exit code blocks the call?',
+        options: ['0', '1', '2', '127'], answer: 2,
+        why: 'Exit 2 blocks. Exit 0 allows.' },
+      { q: 'Where does the hook write the reason Claude sees?',
+        options: ['stdout', 'stderr', 'A log file', 'CLAUDE.md'], answer: 1,
+        why: 'On exit 2, whatever is on stderr is shown to the agent as feedback.' },
+      { q: 'You want a code formatter to run after every edit. Which event?',
+        options: ['PreToolUse', 'PostToolUse', 'UserPromptSubmit', 'Notification'], answer: 1,
+        why: 'Formatting is a side effect after the edit, which is what PostToolUse is for.' },
+    ],
+    fill: [
+      { title: 'Complete the blocking hook', file: '.claude/hooks/block_prod_config.py',
+        code: [
+          'import json, sys',
+          '',
+          'event = json.load(sys.[[0]])           # the tool call arrives as JSON',
+          'file_path = event.get("tool_input", {}).get("file_path", "")',
+          '',
+          'if "config/production" in file_path:',
+          '    print("Blocked: production config", file=sys.[[1]])',
+          '    sys.exit([[2]])                      # block the call',
+          '',
+          'sys.exit(0)',
+        ].join('\n'),
+        blanks: [
+          { answers: ['stdin'], hint: 'Standard input.' },
+          { answers: ['stderr'], hint: 'The stream Claude reads the reason from.' },
+          { answers: ['2'], hint: 'The exit code that blocks.' },
+        ] },
+      { title: 'Log every edit after it happens', file: '.claude/settings.json',
+        code: [
+          '"hooks": {',
+          '  "[[0]]": [',
+          '    { "matcher": "[[1]]",',
+          '      "hooks": [{ "type": "command", "command": "python .claude/hooks/log_edit.py" }] }',
+          '  ]',
+          '}',
+        ].join('\n'),
+        blanks: [
+          { answers: ['PostToolUse'], hint: 'Runs after the tool call completes.' },
+          { answers: ['Edit|Write', 'Write|Edit'], hint: 'Two tool names joined with a pipe.' },
+        ] },
+    ],
+  },
+
+  agents: {
+    quiz: [
+      { q: 'What does a subagent know when it starts?',
+        options: ['The whole conversation so far', 'Only its own prompt and the task it was given', 'Every file you have open', 'The last 10 messages'], answer: 1,
+        why: 'It starts from a clean slate. Anything it needs must be in the task or in files it reads.' },
+      { q: 'What comes back to your main chat?',
+        options: ['Every file the subagent read', 'Only its final result', 'Nothing', 'Its full transcript'], answer: 1,
+        why: 'Only the output returns, which keeps your main context small.' },
+      { q: 'How do you make a subagent read-only?',
+        options: ['<code>tools: Read, Grep, Glob</code>', '<code>model: inherit</code>', '<code>disable-model-invocation: true</code>', '<code>paths: ["src/**"]</code>'], answer: 0,
+        why: 'Without Edit or Write in its tool list, it cannot change files.' },
+    ],
+    fill: [
+      { title: 'A read-only reviewer that uses your current model', file: '.claude/agents/python-reviewer.md',
+        code: [
+          '---',
+          'name: python-reviewer',
+          'description: Reviews Python files. Use proactively after Python code changes.',
+          '[[0]]: Read, Grep, Glob',
+          'model: [[1]]',
+          '---',
+          'You are a Python code reviewer...',
+        ].join('\n'),
+        blanks: [
+          { answers: ['tools'], hint: 'The key that lists what it is allowed to use.' },
+          { answers: ['inherit'], hint: 'Use the same model as the main session.' },
+        ] },
+    ],
+  },
+
+  skills: {
+    quiz: [
+      { q: 'When is the full text of a SKILL.md loaded?',
+        options: ['In every session', 'When the task matches its description, or you type <code>/name</code>', 'Only from a plugin', 'Once, at install'], answer: 1,
+        why: 'Only the name and description are visible at first, so a skill costs almost nothing until it is used.' },
+      { q: 'What does <code>disable-model-invocation: true</code> do?',
+        options: ['Disables the skill completely', 'Claude cannot start it; only you can, with <code>/name</code>', 'Runs it in a subagent', 'Removes its arguments'], answer: 1,
+        why: 'Use it for anything with side effects, such as a deploy, so you decide when it runs.' },
+      { q: 'Which one runs in your main conversation and sees its history?',
+        options: ['A skill', 'A subagent', 'A hook', 'An MCP server'], answer: 0,
+        why: 'A skill runs in the main chat. A subagent is isolated and starts with no history.' },
+      { q: 'A custom skill runs on the Messages API. Which step fails?',
+        options: ['Reading a reference file bundled in the skill', 'Running a bundled Python script', 'Calling an external REST API', 'Writing an output file'], answer: 2,
+        why: 'On the API, skills run in the code execution container, which has no network access and no runtime package installs. Bundled files and scripts work.' },
+      { q: 'An Agent SDK app sets <code>settingSources: [\'user\']</code>, and the skill in the project\'s <code>.claude/skills/</code> disappears. Why?',
+        options: ['The SDK can\'t load skills', 'The <code>\'project\'</code> source was left out, so project skills aren\'t discovered', 'Skills must be uploaded with the Skills API first', 'The skill needs a beta header'], answer: 1,
+        why: 'The SDK finds skills through the filesystem sources in <code>settingSources</code>. Setting it yourself replaces the default, so include <code>\'project\'</code> to keep project skills.' },
+      { q: 'How does a custom subagent get a skill\'s full text when it starts?',
+        options: ['It inherits the skills the main chat already used', 'List the skill in the subagent\'s <code>skills</code> frontmatter field', 'Add <code>Skill</code> to its <code>tools</code> list', 'It can\'t: subagents never use skills'], answer: 1,
+        why: 'Subagents start clean. The <code>skills</code> field preloads the full content. Without it, the subagent can only discover skills and invoke them through the Skill tool.' },
+    ],
+    fill: [
+      { title: 'A skill only you can start, with arguments', file: '.claude/skills/add-function/SKILL.md',
+        code: [
+          '---',
+          'name: add-function',
+          'description: Add a new function to a Python file in src/.',
+          '[[0]]: true',
+          'argument-hint: <file> <function description>',
+          '---',
+          'Request: [[1]]     # replaced by what you type after /add-function',
+        ].join('\n'),
+        blanks: [
+          { answers: ['disable-model-invocation'], hint: 'Three words with dashes: disable, model, invocation.' },
+          { answers: ['$ARGUMENTS'], hint: 'A dollar sign and a capitalized word.' },
+        ] },
+    ],
+  },
+
+  plugins: {
+    quiz: [
+      { q: 'Which folder holds <code>plugin.json</code>?',
+        options: ['<code>.claude/</code>', '<code>.claude-plugin/</code>', '<code>plugin/</code>', 'The plugin root'], answer: 1,
+        why: 'The manifest goes in <code>.claude-plugin/</code>; skills, agents and hooks sit at the plugin root.' },
+      { q: 'Which variable should hook scripts use inside a plugin?',
+        options: ['<code>$CLAUDE_PROJECT_DIR</code>', '<code>${CLAUDE_PLUGIN_ROOT}</code>', '<code>$HOME</code>', '<code>%APPDATA%</code>'], answer: 1,
+        why: 'The plugin can be installed anywhere, so paths are relative to the plugin itself.' },
+      { q: 'How do you run the add-function skill from training-plugin?',
+        options: ['<code>/add-function</code>', '<code>/training-plugin:add-function</code>', '<code>/plugin add-function</code>', '<code>@add-function</code>'], answer: 1,
+        why: 'Plugin skills are namespaced with the plugin name.' },
+      { q: 'Which should never go into a plugin?',
+        options: ['Skills', 'Subagents', 'Hooks', '<code>settings.local.json</code>'], answer: 3,
+        why: 'It holds your private token.' },
+      { q: 'Your plugin\'s MCP server needs an API token from each user. Where should it come from?',
+        options: ['Hardcoded in the plugin\'s <code>.mcp.json</code>', 'A <code>userConfig</code> option with <code>sensitive: true</code>', 'A README telling users to edit the plugin files', 'The author\'s <code>settings.local.json</code>'], answer: 1,
+        why: 'Claude Code prompts for <code>userConfig</code> values when the plugin is enabled. A sensitive value is masked and kept in secure storage, and the MCP config refers to it as <code>${user_config.KEY}</code>.' },
+      { q: 'What is the best last check before you share a plugin?',
+        options: ['Run it once with <code>--plugin-dir</code> from your working copy', 'Install it from the marketplace on a clean machine or a fresh account', 'Read <code>plugin.json</code> one more time', 'Ask a teammate to copy your folder'], answer: 1,
+        why: 'Your own machine already has every path, tool and variable the plugin quietly depends on. A clean install shows what is missing.' },
+    ],
+    fill: [
+      { title: 'Load a local plugin and fix its hook path', file: 'terminal + hooks/hooks.json',
+        code: [
+          '$ claude [[0]] ./training-plugin',
+          '',
+          '// hooks/hooks.json',
+          '"command": "python \\"[[1]]/scripts/block_prod_config.py\\""',
+        ].join('\n'),
+        blanks: [
+          { answers: ['--plugin-dir'], hint: 'A flag: two dashes, "plugin", a dash, "dir".' },
+          { answers: ['${CLAUDE_PLUGIN_ROOT}'], hint: 'Dollar, braces, CLAUDE_PLUGIN_ROOT.' },
+        ] },
+    ],
+  },
+
+  mcp: {
+    quiz: [
+      { q: 'Who decides to call an MCP <b>tool</b>?',
+        options: ['The model', 'The user', 'The client, by address', 'The server, on a timer'], answer: 0,
+        why: 'Tools are actions the model chooses to call.' },
+      { q: 'Who triggers an MCP <b>prompt</b>?',
+        options: ['The model', 'The user, by picking it by name', 'The server', 'A hook'], answer: 1,
+        why: 'In Claude Code prompts appear as slash commands, such as <code>/mcp__notes__summarize_note</code>.' },
+      { q: '<code>notes://{note_id}</code> is a...',
+        options: ['Direct resource', 'Templated resource', 'Tool', 'Prompt'], answer: 1,
+        why: 'It has a parameter in the address. <code>notes://list</code> is direct, with a fixed address.' },
+      { q: 'Why must a stdio MCP server never <code>print()</code>?',
+        options: ['It is slow', 'stdout carries the protocol messages, so extra output corrupts them', 'Prints are shown to the user', 'Python forbids it'], answer: 1,
+        why: 'That is one cause of "Connection closed". Use <code>logging</code>, which writes to stderr.' },
+      { q: 'What is the main purpose of MCP?',
+        options: ['Saving tokens', 'A standard, reusable way for Claude to reach outside systems', 'Replacing skills', 'Caching prompts'], answer: 1,
+        why: 'Token savings are a side effect that varies. Reliability and reuse are the point.' },
+      { q: 'In this project, which one is the MCP <b>server</b>?',
+        options: ['Claude Code', '<code>mcp-server/notes_server.py</code>', '<code>.mcp.json</code>', 'The <code>anthropic</code> library'], answer: 1,
+        why: 'The server is the program that offers the tools, resources and prompts. Claude Code is the app with the built-in MCP client, and <code>.mcp.json</code> is only the client\'s list of servers to connect to.' },
+      { q: 'Who starts the notes server process, since it uses stdio?',
+        options: ['You, in a separate terminal', 'The model', 'The MCP client in Claude Code', 'The server starts itself when the computer boots'], answer: 2,
+        why: 'With stdio the client launches the server as a subprocess, using the command in <code>.mcp.json</code>, and talks to it over stdin and stdout. That is why a crash at startup shows up as "Connection closed".' },
+      { q: 'You ask Claude to search your notes. How does the request travel?',
+        options: ['The server decides to call the tool and the model runs it', 'You call the server directly and the model reads the log', 'The model decides to call a tool, the client sends the call, the server runs it, and the result goes back through the client to the model', 'The client decides, and the model never sees the result'], answer: 2,
+        why: 'The model decides, the client carries the call to the server, the server does the work, and the result returns through the client to the model.' },
+      { q: 'Resources appear as <code>@</code> mentions in Claude Code, but another app using the same server may not show them at all. Why?',
+        options: ['The server sends different data to each app', 'Resources only work in Claude Code', 'The protocol forbids other apps from showing them', 'Each client decides how, or whether, to present them'], answer: 3,
+        why: 'The server only offers resources and prompts. The client chooses how to surface them, so support varies between clients.' },
+      { q: 'You write a second app that connects to <code>notes_server.py</code> through the <code>mcp</code> SDK. What must you change in the server?',
+        options: ['Nothing: any client that speaks MCP can use it', 'Add a new tool for each app', 'Rewrite it in the other app\'s language', 'List it in the other app\'s CLAUDE.md'], answer: 0,
+        why: 'That is the point of a standard protocol: one server, many clients. The server was tested with a small script client before Claude Code connected to it.' },
+    ],
+    fill: [
+      { title: 'Expose a tool, a resource and a prompt', file: 'mcp-server/notes_server.py',
+        code: [
+          'from mcp.server.mcpserver import [[0]]',
+          '',
+          'mcp = MCPServer("notes")',
+          '',
+          '@mcp.[[1]]()',
+          'def search_notes(query: str) -> str:',
+          '    """Search the notes for a word."""',
+          '',
+          '@mcp.[[2]]("notes://{note_id}")',
+          'def get_note(note_id: str) -> str:',
+          '    """One note, by id."""',
+          '',
+          '@mcp.[[3]]()',
+          'def summarize_note(note_id: str) -> str:',
+          '    """Summarize one note in a single sentence."""',
+        ].join('\n'),
+        blanks: [
+          { answers: ['MCPServer'], hint: 'The 2.x name (it used to be FastMCP).' },
+          { answers: ['tool'], hint: 'An action the model calls.' },
+          { answers: ['resource'], hint: 'Read-only data fetched by address.' },
+          { answers: ['prompt'], hint: 'An instruction template the user picks.' },
+        ] },
+      { title: 'Register the server for this project', file: '.mcp.json',
+        code: [
+          '{',
+          '  "[[0]]": {',
+          '    "notes": {',
+          '      "type": "[[1]]",',
+          '      "command": ".venv/Scripts/python.exe",',
+          '      "args": ["mcp-server/notes_server.py"]',
+          '    }',
+          '  }',
+          '}',
+        ].join('\n'),
+        blanks: [
+          { answers: ['mcpServers'], hint: 'camelCase: mcp + Servers.' },
+          { answers: ['stdio'], hint: 'Claude starts the process and talks over standard input/output.' },
+        ] },
+      { title: 'Write a minimal MCP client', file: 'the small test client used earlier (not saved in the repo)',
+        code: [
+          '# imports from mcp and mcp.client.stdio omitted',
+          'params = StdioServerParameters(',
+          '    command=".venv/Scripts/python.exe",',
+          '    args=["mcp-server/notes_server.py"],   # the client launches the server',
+          ')',
+          '',
+          'async with [[0]](params) as (read, write):',
+          '    async with [[1]](read, write) as session:',
+          '        await session.[[2]]()                      # handshake',
+          '        tools = await session.[[3]]()              # ask: what do you offer?',
+          '        result = await session.[[4]]("search_notes", {"query": "hook"})',
+        ].join('\n'),
+        blanks: [
+          { answers: ['stdio_client'], hint: 'Opens the connection by launching the server process. Named after the transport.' },
+          { answers: ['ClientSession'], hint: 'The class that holds the conversation with the server.' },
+          { answers: ['initialize'], hint: 'The first message of every MCP session.' },
+          { answers: ['list_tools'], hint: 'Ask which tools the server has.' },
+          { answers: ['call_tool'], hint: 'Run one tool by name, with arguments.' },
+        ] },
+    ],
+  },
+
+  transport: {
+    quiz: [
+      { q: '<b>Transport only.</b> The MCP server is already running on your company\'s cloud and has a URL. Which transport?',
+        options: ['stdio', 'HTTP', 'SSE, because it is the newest', 'None: it cannot be used from Claude Code'], answer: 1,
+        why: 'HTTP is for servers that are already running somewhere and reachable by URL. stdio is for servers Claude Code launches itself on your machine, and SSE is deprecated.' },
+      { q: '<b>Transport only.</b> A Python script on your laptop that reads a local file. Which transport?',
+        options: ['stdio', 'HTTP', 'SSE', 'WebSocket'], answer: 0,
+        why: 'It runs on your machine, so Claude Code can launch it directly. Putting it behind a URL would add hosting and authentication for no benefit.' },
+      { q: '<b>Scope only.</b> Where is project scope stored, and who gets it?',
+        options: ['<code>~/.claude.json</code>; only you', '<code>.mcp.json</code> in the repo; everyone who clones it', 'Managed settings; the whole organization', 'The plugin folder; plugin users'], answer: 1,
+        why: 'Project scope writes <code>.mcp.json</code> at the project root, which is committed, so the team gets it. Claude Code asks for approval before using such a server.' },
+      { q: '<b>Scope only.</b> What is the default scope when you run <code>claude mcp add</code> without <code>--scope</code>?',
+        options: ['Project', 'User', 'Local', 'Enterprise'], answer: 2,
+        why: 'The default is local: only you, only in this project, stored in <code>~/.claude.json</code>. That makes it a safe place for experiments and credentials.' },
+      { q: '<b>Checkpoint 1.</b> A local SQLite query tool you use only on your development machine.',
+        options: ['HTTP + Project (.mcp.json)', 'HTTP + Enterprise (managed settings)', 'stdio + Local', 'stdio or HTTP + Local'], answer: 2, fixed: true,
+        why: 'It runs on your machine, so use stdio, and only you use it, so use local scope. "stdio or HTTP" is too vague: where the server runs decides the transport, and a local file tool belongs on stdio.' },
+      { q: '<b>Checkpoint 2.</b> A code search service hosted on your company\'s infrastructure that the whole engineering team should access.',
+        options: ['HTTP + Project (.mcp.json)', 'HTTP + Enterprise (managed settings)', 'stdio + Local', 'stdio or HTTP + Local'], answer: 0, fixed: true,
+        why: 'It is hosted remotely, so HTTP. The whole engineering team needs it, and it is not an IT mandate for everyone, so project scope: commit it to <code>.mcp.json</code> and it reaches the team. Enterprise scope is for the whole organization.' },
+      { q: '<b>Checkpoint 3.</b> An experimental web-scraping server you are testing this week against one repository, not ready to share.',
+        options: ['HTTP + Project (.mcp.json)', 'HTTP + Enterprise (managed settings)', 'stdio + Local', 'stdio or HTTP + Local'], answer: 3, fixed: true,
+        why: 'Experimental, one repository and not ready to share all point to local scope, which rules out project and enterprise. The scenario never says where the server runs, so the transport is open: it could be a script you launch (stdio) or something you host (HTTP). Here the scope is the decision, and "stdio or HTTP + Local" is the only option that says so.' },
+      { q: '<b>Checkpoint 4.</b> A security-scanning server your organization\'s IT team needs deployed to every developer\'s Claude Code installation.',
+        options: ['HTTP + Project (.mcp.json)', 'HTTP + Enterprise (managed settings)', 'stdio + Local', 'stdio or HTTP + Local'], answer: 1, fixed: true,
+        why: 'IT pushes it to every installation, so enterprise (managed settings). It is a central service, so HTTP. Project scope would reach only one repo, and only people who clone it.' },
+      { q: 'The same server name is defined in local and project scope with different settings. What happens?',
+        options: ['The two definitions are merged', 'Claude Code uses the local one only', 'Claude Code uses the project one only', 'It refuses to start'], answer: 1,
+        why: 'Precedence, highest first: managed, local, project, user. Only the highest definition is used and fields are not merged.' },
+      { q: 'Why does Claude Code ask you to approve the <code>notes</code> server before using it?',
+        options: ['The server is large', 'It is project scoped, so the config came from the repo and may not be yours', 'Python servers are always blocked', 'The model asked for it'], answer: 1,
+        why: 'Anything from a committed <code>.mcp.json</code> could have been written by someone else, so Claude Code asks before launching it.' },
+    ],
+    fill: [
+      { title: 'Add a local server on your machine (stdio, private to you)', file: 'terminal',
+        code: [
+          '$ claude mcp add notes [[0]] .venv/Scripts/python.exe mcp-server/notes_server.py',
+          '                  # the double dash separates Claude\'s options from the server command',
+        ].join('\n'),
+        blanks: [
+          { answers: ['--'], hint: 'Two dashes, with nothing else.' },
+        ] },
+      { title: 'Add a hosted server over HTTP and share it with the team', file: 'terminal',
+        code: [
+          '$ claude mcp add --transport [[0]] code-search https://search.example.com/mcp --scope [[1]]',
+        ].join('\n'),
+        blanks: [
+          { answers: ['http'], hint: 'The transport for a server that is already running at a URL.' },
+          { answers: ['project'], hint: 'The scope that writes to .mcp.json so the team gets it.' },
+        ] },
+      { title: 'Describe the same HTTP server in .mcp.json, without putting the token in the file', file: '.mcp.json',
+        code: [
+          '{',
+          '  "mcpServers": {',
+          '    "code-search": {',
+          '      "type": "[[0]]",',
+          '      "url": "https://search.example.com/mcp",',
+          '      "headers": { "Authorization": "Bearer [[1]]" }',
+          '    }',
+          '  }',
+          '}',
+        ].join('\n'),
+        blanks: [
+          { answers: ['http'], hint: 'Remote servers need a type, and it must match the transport.' },
+          { answers: ['${SEARCH_TOKEN}', '${API_KEY}', '${TOKEN}'], hint: 'An environment variable reference, so the secret stays out of git: $, braces, a name.' },
+        ] },
+      { title: 'Check what is connected', file: 'terminal and Claude Code',
+        code: [
+          '$ claude mcp [[0]]        # in a terminal: list configured servers',
+          '> [[1]]                   # inside Claude Code: status of each server',
+        ].join('\n'),
+        blanks: [
+          { answers: ['list'], hint: 'A verb for showing everything configured.' },
+          { answers: ['/mcp'], hint: 'The slash command named after the protocol.' },
+        ] },
+    ],
+  },
+
+  permissions: {
+    quiz: [
+      { q: 'An allow rule and a deny rule both match the same call. What happens?',
+        options: ['It runs, because the allow rule is more specific', 'It is blocked: deny wins', 'Claude Code asks you to choose', 'The newest rule wins'], answer: 1,
+        why: 'Deny wins over ask, and ask wins over allow. An allow rule cannot carve an exception out of a deny rule.' },
+      { q: 'Which mode skips permission prompts and should only be used in isolated containers or VMs?',
+        options: ['acceptEdits', 'dontAsk', 'plan', 'bypassPermissions'], answer: 3,
+        why: '<code>bypassPermissions</code> skips prompts, even for writes to protected paths such as <code>.git</code> and <code>.claude</code>. The docs say to use it only where Claude Code cannot damage anything.' },
+      { q: 'In <code>bypassPermissions</code> mode, what happens to a deny rule such as <code>Read(.env.production)</code>?',
+        options: ['It is ignored', 'It still blocks, because deny rules apply in every mode', 'It turns into an ask rule', 'It only applies to Bash'], answer: 1,
+        why: 'Deny rules block in every mode. The risk of a permissive mode is that everything else runs without a prompt, not that deny rules switch off.' },
+      { q: 'You deny <code>Read(.env.production)</code>. Which way of reading the file is <b>not</b> stopped?',
+        options: ['The Read tool', 'Bash <code>cat .env.production</code>', 'A Python script that opens the file itself', 'An <code>@.env.production</code> mention in your prompt'], answer: 2,
+        why: 'The rule covers the built-in tools, recognized Bash file commands such as <code>cat</code>, and @ mentions. A script that opens the file itself is not covered. The sandbox is the OS-level answer.' },
+      { q: 'You need a hard guarantee that no process can read a path. What do the docs point to?',
+        options: ['A longer deny list', 'A line in CLAUDE.md', 'The sandbox', 'A Notification hook'], answer: 2,
+        why: 'Rules match the commands Claude writes. For enforcement that does not depend on command text, use the sandbox.' },
+      { q: 'A PreToolUse hook returns "allow" for a call that a deny rule matches. What happens?',
+        options: ['The hook wins and the call runs', 'The call stays blocked: deny rules apply whatever a hook returns', 'Claude Code asks you', 'Both are ignored'], answer: 1,
+        why: 'Hook decisions do not override permission rules. A matching deny rule blocks the call regardless.' },
+      { q: 'Where does a policy that nobody can override, such as turning off bypass mode, belong?',
+        options: ['<code>.claude/settings.local.json</code>', '<code>CLAUDE.md</code>', 'Managed settings', '<code>~/.claude/settings.json</code>'], answer: 2,
+        why: '<code>permissions.disableBypassPermissionsMode</code> works from any scope, but in managed settings users cannot override it.' },
+      { q: 'Which file should hold an allow rule that mentions your own temp folder?',
+        options: ['<code>.claude/settings.json</code>', '<code>.claude/settings.local.json</code>', '<code>CLAUDE.md</code>', '<code>.mcp.json</code>'], answer: 1,
+        why: '<code>settings.json</code> is shared with the team, so a path from your own machine does not belong there. <code>settings.local.json</code> is personal and not committed.' },
+      { q: 'This is committed to the repo. What does it do?',
+        code: '{ "permissions": { "allow": ["Bash"] } }',
+        options: ['Allows only the Bash tool name, with no commands', 'Lets Claude run any shell command without asking, for everyone who uses the repo', 'Blocks shell commands', 'Does nothing, because rules need brackets'], answer: 1,
+        why: 'A bare tool name matches every command. Shared allow lists should name specific commands, such as <code>Bash(git status)</code>.' },
+    ],
+    fill: [
+      { title: 'Block reading the secrets files, in every mode', file: '.claude/settings.json',
+        code: ['{', '  "permissions": {', '    "[[0]]": ["Read(./.env)", "Read(./secrets/**)"]', '  }', '}'].join('\n'),
+        blanks: [
+          { answers: ['deny'], hint: 'The rule type that blocks, and wins over allow and ask.' },
+        ] },
+      { title: 'IT turns bypass mode off for everyone', file: 'managed settings',
+        code: ['{', '  "permissions": {', '    "disableBypassPermissionsMode": "[[0]]"', '  }', '}'].join('\n'),
+        blanks: [
+          { answers: ['disable'], hint: 'The value that switches the mode off. It is a word, not true.' },
+        ] },
+    ],
+  },
+
+  codereview: {
+    quiz: [
+      { q: 'The reviewer says: "<code>conn</code> is opened on line 18 and never closed on the error path." What do you do?',
+        options: ['Open line 18 and confirm it; the diff can prove this', 'Ignore it, because AI reviews are unreliable', 'Load-test the service first', 'Apply the fix without looking'], answer: 0,
+        why: 'This is provable from the code in front of the reviewer. Confirm it on the cited lines, then fix it.' },
+      { q: 'The reviewer says: "This change will cause timeouts in the billing service." How do you treat it?',
+        options: ['As proven, because it cited a file', 'As a hypothesis to test before acting', 'As noise to delete', 'As an automatic reason to block the PR'], answer: 1,
+        why: 'The reviewer read code. It didn\'t run it or see the billing service. Check the claim with a test, the logs or the team that owns the service.' },
+      { q: 'Why can\'t a code reviewer prove claims about runtime behavior?',
+        options: ['It uses a smaller model', 'It reads the diff and surrounding code without building or running it', 'It only sees file names', 'It isn\'t allowed to comment on runtime'], answer: 1,
+        why: 'The Code Review docs say a review works from reading the code, without building or running it. Runtime behavior is outside its evidence.' },
+      { q: 'Where does the human gate belong?',
+        options: ['Before each review comment is posted', 'Where a finding becomes a hard-to-reverse action, such as a merge, deploy or data migration', 'Nowhere, if the review found no issues', 'Only on the first pull request'], answer: 1,
+        why: 'Comments and branch edits are easy to undo. Merges, deploys and data changes aren\'t, so that is where a person decides.' },
+      { q: 'The reviewer keeps flagging bare <code>except:</code> blocks, which your team allows in <code>scripts/</code>. Best fix?',
+        options: ['Ignore those findings from now on', 'Write the convention down in <code>REVIEW.md</code> or <code>CLAUDE.md</code>', 'Turn the reviewer off', 'Rename the folder'], answer: 1,
+        why: 'Without written conventions the reviewer has to guess. Giving it the rule removes that whole class of false positives.' },
+      { q: 'Which <code>REVIEW.md</code> does Code Review follow for a pull request?',
+        options: ['The one in the pull request\'s changes', 'The one on the base or default branch', 'The newest one on any branch', 'The one in your home folder'], answer: 1,
+        why: 'It never reads it from the pull request\'s own changes, so a pull request can\'t rewrite the rules it is reviewed against.' },
+    ],
+    fill: [
+      { title: 'Give the reviewer your rules and gate the push', file: 'repo root + .claude/settings.json',
+        code: [
+          '# Code Review reads your review conventions from this file',
+          '[[0]]',
+          '',
+          '// .claude/settings.json: pushing always asks a person first',
+          '"permissions": { "[[1]]": ["Bash(git push *)"] }',
+        ].join('\n'),
+        blanks: [
+          { answers: ['REVIEW.md'], hint: 'Six capital letters, then .md.' },
+          { answers: ['ask'], hint: 'The rule type between allow and deny.' },
+        ] },
+    ],
+  },
+
+  enterprise: {
+    quiz: [
+      { q: 'A remote MCP server must act with each developer\'s own Jira permissions. How should it authenticate?',
+        options: ['One shared token in <code>.mcp.json</code>', 'OAuth: each developer signs in through <code>/mcp</code>', 'An environment variable holding the admin\'s token', 'No authentication inside the company network'], answer: 1,
+        why: 'OAuth gives each user their own token, so the server acts as that person and access can be revoked per user.' },
+      { q: 'An internal service needs one service token, not a user login. Where does it go?',
+        options: ['Written into <code>.mcp.json</code> and committed', 'An environment variable referenced as <code>${SERVICE_TOKEN}</code>', 'CLAUDE.md', 'A comment in the hook script'], answer: 1,
+        why: 'The committed file holds only the reference. Each machine or vault supplies the value, so rotating it needs no change to the repo.' },
+      { q: 'An auditor wants a record of every tool call the agent made. What answers it?',
+        options: ['A line in CLAUDE.md asking Claude to log its work', 'A PostToolUse hook that writes an audit log, deployed in managed settings', 'A PreToolUse hook that exits 2', 'Plan mode'], answer: 1,
+        why: 'A hook runs every time, unlike an instruction. Deployed in managed settings, it can only be turned off from managed settings.' },
+      { q: 'How do you stop every developer from turning on <code>bypassPermissions</code>?',
+        options: ['Ask them to in the README', 'A deny rule in <code>.claude/settings.json</code>', '<code>permissions.disableBypassPermissionsMode: "disable"</code> in managed settings', 'Uninstall the mode from the CLI'], answer: 2,
+        why: 'Managed settings are highest in precedence, and users can\'t override them.' },
+      { q: 'A customer requires that inference on the Claude API runs only in the US. What do you set?',
+        options: ['<code>inference_geo: "us"</code>, per request or as the workspace default', 'An <code>AWS_REGION</code> variable', 'A deny rule', 'Nothing: it can\'t be controlled'], answer: 0,
+        why: 'On the Claude API, <code>inference_geo</code> controls where inference runs and workspace geo controls storage. On Bedrock, the AWS region decides.' },
+      { q: 'Why settle these questions before the production rollout?',
+        options: ['They are hard to implement', 'They are easy to set up but hard to retrofit after a failed security review', 'Claude Code requires them at install', 'They only work on new machines'], answer: 1,
+        why: 'Each answer is a setting or a short script. Retrofitting means re-issuing credentials, redeploying configuration to every machine, and explaining logs you never collected.' },
+    ],
+    fill: [
+      { title: 'Lock the configuration and log every tool call', file: 'managed-settings.json',
+        code: [
+          '{',
+          '  "permissions": { "[[0]]": "disable" },',
+          '  "[[1]]": true,',
+          '  "hooks": {',
+          '    "[[2]]": [{ "matcher": "*", "hooks": [{ "type": "command",',
+          '      "command": "python \\"C:/Program Files/Acme/claude-audit/log_tool_call.py\\"" }] }]',
+          '  }',
+          '}',
+        ].join('\n'),
+        blanks: [
+          { answers: ['disableBypassPermissionsMode'], hint: 'disable + Bypass + Permissions + Mode, in camelCase.' },
+          { answers: ['allowManagedHooksOnly'], hint: 'allow + Managed + Hooks + Only, in camelCase.' },
+          { answers: ['PostToolUse'], hint: 'The event that fires after a tool ran.' },
+        ] },
+    ],
+  },
+
+  bughunt: {
+    quiz: [
+      { q: '<b>File 1</b>, committed as <code>.claude/settings.json</code>. What is the bug?',
+        code: '{ "permissions": { "defaultMode": "bypassPermissions", "deny": ["Read(.env.production)"] } }',
+        options: ['The deny rule has invalid syntax', 'Deny rules are ignored in every mode, so the file protects nothing', 'Bypass mode as the default in a shared file switches off permission prompts and safety checks for everyone who opens the repo', '<code>defaultMode</code> is not a valid key'], answer: 2,
+        why: 'The deny rule is valid, and the docs say deny rules block in every mode, so it still works. The bug is the mode: with prompts and safety checks off, that one rule is all that is left, and the file is shared with the whole team.' },
+      { q: '<b>File 2</b>, a skill committed to the repo. What is the bug?',
+        code: ['---', 'name: migration-validate', 'description: Validates migration scripts before they run against production.', '---', '## Steps', '1. Run: /Users/priya/scripts/validate-migration.sh', '2. Report validation results.'].join('\n'),
+        options: ['The description is too long', 'The script path points into one person\'s home folder, so the command fails on every other machine', 'Skills cannot run shell scripts', 'The name must be written in capitals'], answer: 1,
+        why: 'The script exists only on Priya\'s machine. Bundle it in the skill folder and call <code>${CLAUDE_SKILL_DIR}/scripts/validate-migration.sh</code>, which works whatever the current directory is.' },
+      { q: '<b>File 3</b>, a project-scoped <code>.mcp.json</code>. What is the bug?',
+        code: ['{', '  "mcpServers": {', '    "data-warehouse": {', '      "type": "http",', '      "url": "https://warehouse.example.com/mcp",', '      "headers": { "Authorization": "Bearer [example token]" }', '    }', '  }', '}'].join('\n'),
+        options: ['HTTP servers cannot use headers', 'The type should be stdio', 'A production token is written into a committed file, so everyone with repo access, now and in git history, has it', 'The URL must be localhost'], answer: 2,
+        why: 'Project scope is shared through git. Use <code>Bearer ${WAREHOUSE_TOKEN}</code>, set the variable in each developer\'s environment, and rotate the token that was exposed.' },
+      { q: 'This rule should apply only to Python files in <code>src/</code>. What does it actually do?',
+        code: ['---', 'path:', '  - "src/**/*.py"', '---', '# Python rules', '- Add type hints to all function signatures.'].join('\n'),
+        options: ['It applies only to Python files in src, as intended', 'It has no <code>paths</code> field, so it counts as unscoped and loads for every session', 'It fails to load', 'It applies only when you run <code>/memory</code>'], answer: 1,
+        why: 'The key is <code>paths</code>, plural. A rules file without a <code>paths</code> field loads unconditionally, so a typo quietly removes the scoping. Confirm what is loaded with <code>/memory</code>.' },
+      { q: 'A PreToolUse hook is meant to block edits to production config. What happens when the path matches?',
+        code: ['import json, sys', 'event = json.load(sys.stdin)', 'path = event["tool_input"].get("file_path", "")', 'if "config/production" in path:', '    print("Blocked: production config", file=sys.stderr)', '    sys.exit(1)', 'sys.exit(0)'].join('\n'),
+        options: ['The edit is blocked and Claude sees the message', 'The edit goes ahead, because exit code 1 is a non-blocking error and only exit 2 blocks', 'Claude Code crashes', 'The edit is blocked, but without a message'], answer: 1,
+        why: 'Exit 1 is the usual Unix failure code, but for hooks only exit 2 blocks. To enforce a policy, use <code>sys.exit(2)</code>.' },
+      { q: 'This hook sits in a plugin\'s <code>hooks/hooks.json</code>, and the script lives in the plugin\'s own <code>scripts/</code> folder. What goes wrong once someone installs the plugin?',
+        code: '"command": "python $CLAUDE_PROJECT_DIR/scripts/block_prod_config.py"',
+        options: ['Nothing: it works from any install', 'The hook looks for the script in the user\'s project, where it does not exist', 'Plugins cannot run Python', 'The quotes are missing, so Windows rejects it'], answer: 1,
+        why: '<code>$CLAUDE_PROJECT_DIR</code> is the user\'s project root. Files bundled with the plugin are referenced with <code>${CLAUDE_PLUGIN_ROOT}/scripts/...</code>.' },
+      { q: 'The plugin loads, but its skill and hooks are missing. Why?',
+        code: ['training-plugin/', '└── .claude-plugin/', '    ├── plugin.json', '    ├── skills/add-function/SKILL.md', '    └── hooks/hooks.json'].join('\n'),
+        options: ['Skills must be in a folder named commands', 'Only the manifest goes in <code>.claude-plugin/</code>; skills, agents and hooks belong at the plugin root', 'plugin.json must be in the root folder', 'Hooks cannot be packaged in plugins'], answer: 1,
+        why: 'The docs: save the manifest at <code>.claude-plugin/plugin.json</code> and put every other plugin file at the plugin root, including <code>skills/</code> and <code>hooks/</code>. <code>claude plugin validate</code> would catch this.' },
+      { q: 'Claude Code reports an error for this server. What is missing?',
+        code: '{ "mcpServers": { "search": { "url": "https://search.example.com/mcp" } } }',
+        options: ['A command and args', 'A <code>type</code>: a server with a URL must say <code>http</code> (or <code>sse</code> or <code>ws</code>)', 'A port number', 'A scope field'], answer: 1,
+        why: 'The error reads: the server has a url but no type; add type http (or sse / ws).' },
+      { q: 'This works on your machine and is committed to the repo. What breaks for a teammate?',
+        code: ['"notes": { "type": "stdio",', '  "command": "C:/Users/your-name/Projects/claude-code-training-lab/.venv/Scripts/python.exe",', '  "args": ["C:/Users/your-name/Projects/claude-code-training-lab/mcp-server/notes_server.py"] }'].join('\n'),
+        options: ['Their user name and folders differ, so neither path exists', 'stdio servers cannot use Python', 'The type must be http', 'Nothing: paths are rewritten per user'], answer: 0,
+        why: 'Absolute paths from your own machine do not exist on anyone else\'s. Use relative paths, as our <code>.mcp.json</code> does.' },
+      { q: 'This is in the committed <code>.claude/settings.json</code>. Where should the token live instead?',
+        code: '{ "env": { "ANTHROPIC_AUTH_TOKEN": "[example token]" } }',
+        options: ['In CLAUDE.md, so Claude remembers it', 'In <code>.claude/settings.local.json</code>, which is gitignored', 'In <code>.mcp.json</code>', 'In the description of a skill'], answer: 1,
+        why: 'The local settings file is personal and not committed, which is why this project keeps its gateway token there. Rotate any token that was already committed.' },
+    ],
+    write: [
+      { title: 'File 1: find the bug and say what it does', file: '.claude/settings.json',
+        code: '{ "permissions": { "defaultMode": "bypassPermissions", "deny": ["Read(.env.production)"] } }',
+        prompt: 'Name the bug, then write one sentence on what it does at runtime.',
+        model: '<b>Bug:</b> <code>defaultMode: "bypassPermissions"</code> in a shared settings file. <b>Runtime:</b> every session in this repo starts with permission prompts and safety checks off, so Claude runs commands and edits files without asking, even in protected paths like <code>.git</code> and <code>.claude</code>, and the single <code>Read(.env.production)</code> deny rule is the only guard left.',
+        points: ['Named bypassPermissions as the problem', 'Said it removes permission prompts and safety checks', 'Said the file is shared, so it affects everyone', 'Said the deny rule is narrow: one file, and it is all that remains'] },
+      { title: 'File 2: find the bug and say what it does', file: '.claude/skills/migration-validate/SKILL.md',
+        code: ['---', 'name: migration-validate', 'description: Validates migration scripts before they run against production.', '---', '## Steps', '1. Run: /Users/priya/scripts/validate-migration.sh', '2. Report validation results.'].join('\n'),
+        prompt: 'Name the bug, then write one sentence on what it does at runtime.',
+        model: '<b>Bug:</b> a hardcoded absolute path into one person\'s home folder. <b>Runtime:</b> the script exists only on Priya\'s machine, so on anyone else\'s the command fails with file not found and the production validation never runs.',
+        points: ['Named the absolute, machine-specific path', 'Said it exists only on one machine, so it fails for everyone else', 'Said the validation never runs', 'Gave the fix: bundle the script and use ${CLAUDE_SKILL_DIR}'] },
+      { title: 'File 3: find the bug and say what it does', file: '.mcp.json',
+        code: ['{', '  "mcpServers": {', '    "data-warehouse": {', '      "type": "http",', '      "url": "https://warehouse.example.com/mcp",', '      "headers": { "Authorization": "Bearer [example token]" }', '    }', '  }', '}'].join('\n'),
+        prompt: 'Name the bug, then write one sentence on what it does at runtime.',
+        model: '<b>Bug:</b> a production bearer token written into <code>.mcp.json</code>. <b>Runtime:</b> the file is committed, so everyone with access to the repo, including its git history and every clone, can read the production warehouse credential, and it cannot be changed or revoked per person without editing the repo.',
+        points: ['Named the hardcoded token', 'Said the file is committed or shared', 'Said who is exposed: everyone with repo access, including history', 'Gave the fix: a ${VAR} reference, and rotate the token'] },
+    ],
+    fill: [
+      { title: 'Fix File 1: swap bypass mode for the normal mode that asks', file: '.claude/settings.json',
+        code: ['{', '  "permissions": {', '    "defaultMode": "[[0]]",', '    "deny": ["Read(.env.production)"]', '  }', '}'].join('\n'),
+        blanks: [
+          { answers: ['default', 'manual'], hint: 'The mode that prompts the first time each tool is used. It is shown as Manual in the interface.' },
+        ] },
+      { title: 'Fix File 2: call the script bundled inside the skill folder', file: '.claude/skills/migration-validate/SKILL.md',
+        code: ['## Steps', '1. Run: [[0]]/scripts/validate-migration.sh', '2. Report validation results.'].join('\n'),
+        blanks: [
+          { answers: ['${CLAUDE_SKILL_DIR}'], hint: 'A variable for the folder that holds SKILL.md: dollar, braces, CLAUDE_SKILL_DIR.' },
+        ] },
+      { title: 'Fix File 3: read the token from an environment variable named WAREHOUSE_TOKEN', file: '.mcp.json',
+        code: ['"headers": {', '  "Authorization": "Bearer [[0]]"', '}'].join('\n'),
+        blanks: [
+          { answers: ['${WAREHOUSE_TOKEN}'], hint: 'Dollar sign, braces, and the variable name.' },
+        ] },
+    ],
+  },
+
+  caching: {
+    quiz: [
+      { q: 'In what order is a request processed?',
+        options: ['messages, system, tools', 'tools, system, messages', 'system, tools, messages', 'It depends on the model'], answer: 1,
+        why: 'So a breakpoint after the tools caches only the tools, and a timestamp in the system prompt breaks everything after it.' },
+      { q: 'One character changes before the cache breakpoint. What happens?',
+        options: ['Only that character is reprocessed', 'The cache misses and the prefix is written again', 'Nothing', 'The request fails'], answer: 1,
+        why: 'The prefix must match exactly. We saw this in the first demo: one extra character caused a fresh write.' },
+      { q: 'How many cache breakpoints can one request have?',
+        options: ['1', '2', '4', 'Unlimited'], answer: 2,
+        why: 'Up to four <code>cache_control</code> markers.' },
+      { q: 'A document is used in a single request only. Does caching save money?',
+        options: ['Yes, about 90%', 'No: the write costs 1.25x and there are no reads to recover it', 'It is the same price', 'Only with the 1-hour lifetime'], answer: 1,
+        why: 'Break-even is two requests with the 5-minute lifetime: 1.25 + 0.1 = 1.35x versus 2x.' },
+      { q: 'The system prompt starts with <code>f"Today is {datetime.now()}"</code>. Why are there never cache hits?',
+        options: ['Dates are not allowed', 'The prefix is different on every request', 'The system prompt cannot be cached', 'f-strings disable caching'], answer: 1,
+        why: 'Remove the timestamp, or move it after the last breakpoint.' },
+    ],
+    fill: [
+      { title: 'Cache the handbook for an hour and check the hit', file: 'caching-example/cache_demo.py',
+        code: [
+          'response = client.messages.create(',
+          '    model="claude-haiku-5-5",',
+          '    max_tokens=300,',
+          '    system=[{',
+          '        "type": "text",',
+          '        "text": handbook,',
+          '        "[[0]]": {"type": "[[1]]", "ttl": "[[2]]"},',
+          '    }],',
+          '    messages=[{"role": "user", "content": question}],',
+          ')',
+          'print(response.usage.[[3]])   # tokens served from the cache',
+        ].join('\n'),
+        blanks: [
+          { answers: ['cache_control'], hint: 'The field that marks a breakpoint.' },
+          { answers: ['ephemeral'], hint: 'The only cache type.' },
+          { answers: ['1h'], hint: 'One hour, written short.' },
+          { answers: ['cache_read_input_tokens'], hint: 'cache_ + read + _input_tokens.' },
+        ] },
+    ],
+  },
+
+  setup: {
+    quiz: [
+      { q: 'winget says Claude Code is installed, but <code>claude</code> is "not recognized". Most likely cause?',
+        options: ['It did not really install', 'Its folder is not on PATH', 'It needs admin rights to run', 'The wrong version was installed'], answer: 1,
+        why: 'Here, <code>claude.exe</code> was in a WinGet package folder that was never added to PATH.' },
+      { q: 'You fixed PATH, but the VS Code terminal still fails. What now?',
+        options: ['Reinstall Claude Code', 'Fully quit VS Code (all windows) and reopen it', 'Edit CLAUDE.md', 'Run <code>/init</code>'], answer: 1,
+        why: 'VS Code keeps the environment it started with. Any running VS Code process keeps the old PATH.' },
+      { q: 'A Python script fails with "Could not resolve authentication method". Why?',
+        options: ['The token is wrong', 'Plain scripts do not read <code>settings.local.json</code>', 'The SDK is too old', 'The gateway is down'], answer: 1,
+        why: 'Only Claude Code reads that file. Load its env values into the terminal first.' },
+    ],
+    fill: [
+      { title: 'Point Claude Code at the company gateway', file: '.claude/settings.local.json',
+        code: [
+          '{',
+          '  "env": {',
+          '    "[[0]]": "<gateway url>",',
+          '    "[[1]]": "<your token>"',
+          '  }',
+          '}',
+        ].join('\n'),
+        blanks: [
+          { answers: ['ANTHROPIC_BASE_URL'], hint: 'ANTHROPIC_ + where requests go.' },
+          { answers: ['ANTHROPIC_AUTH_TOKEN'], hint: 'ANTHROPIC_ + the credential.' },
+        ] },
+    ],
+  },
+};
+
+/* ------------------------------------------------------------------ */
+const ORDER = ['overview', 'claudemd', 'rules', 'hooks', 'permissions', 'agents', 'skills', 'plugins', 'mcp', 'transport', 'caching', 'codereview', 'bughunt', 'enterprise', 'setup'];
+const TITLE = { overview: 'Overview', claudemd: 'CLAUDE.md', rules: 'Rules', hooks: 'Hooks', permissions: 'Permissions',
+                agents: 'Subagents', skills: 'Skills', plugins: 'Plugins', mcp: 'MCP', transport: 'MCP transport & scope',
+                caching: 'Prompt caching', codereview: 'AI code review', bughunt: 'Config bug hunt',
+                enterprise: 'Enterprise security', setup: 'Setup lessons' };
+const STORE = 'claude-guide-progress-v1';
+
+let done = loadProgress();
+function loadProgress() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } }
+function saveProgress() { try { localStorage.setItem(STORE, JSON.stringify(done)); } catch (e) { /* storage unavailable */ } }
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const norm = s => s.trim().replace(/\s+/g, ' ').replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+
+function markDone(id) { done[id] = true; saveProgress(); updateProgress(); }
+
+// Stable shuffle: the same question always gets the same option order, so a refresh never moves things around.
+function seededOrder(n, seed) {
+  let h = 2166136261;
+  for (const c of seed) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const rand = () => {
+    h = (h + 0x6D2B79F5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const order = [...Array(n).keys()];
+  for (let j = n - 1; j > 0; j--) {
+    const r = Math.floor(rand() * (j + 1));
+    [order[j], order[r]] = [order[r], order[j]];
+  }
+  return order;
+}
+
+function renderQuiz(lesson, item, i) {
+  const id = `${lesson}:q${i}`;
+  // order[d] = which original option is shown in position d. "fixed" keeps the author's order.
+  const order = item.fixed ? item.options.map((_, k) => k) : seededOrder(item.options.length, id);
+  const el = document.createElement('div');
+  el.className = 'q';
+  el.innerHTML = `<div class="q-num">Question ${i + 1}</div><p class="q-text">${item.q}</p>${item.code ? `<pre class="q-code"><code>${esc(item.code)}</code></pre>` : ''}<div class="opts"></div><div class="feedback" hidden></div>`;
+  const opts = el.querySelector('.opts');
+  const fb = el.querySelector('.feedback');
+
+  order.forEach((original, k) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt';
+    b.innerHTML = `<span class="letter">${'ABCDE'[k]}</span><span>${item.options[original]}</span>`;
+    b.addEventListener('click', () => choose(k));
+    opts.appendChild(b);
+  });
+
+  // k is the position on screen; order[k] is the original option behind it.
+  function choose(k) {
+    const buttons = [...opts.children];
+    fb.hidden = false;
+    if (order[k] === item.answer) {
+      buttons.forEach(b => (b.disabled = true));
+      buttons[k].classList.add('right');
+      fb.className = 'feedback ok';
+      fb.innerHTML = `<b>Correct.</b> ${item.why}`;
+      el.classList.add('solved');
+      if (!done[id]) markDone(id);
+    } else {
+      buttons[k].classList.add('wrong');
+      buttons[k].disabled = true;
+      fb.className = 'feedback bad';
+      fb.innerHTML = '<b>Not quite.</b> Try another option.';
+    }
+  }
+
+  if (done[id]) choose(order.indexOf(item.answer));
+  return el;
+}
+
+function renderFill(lesson, item, i) {
+  const id = `${lesson}:f${i}`;
+  const el = document.createElement('div');
+  el.className = 'fill';
+
+  const parts = item.code.split(/\[\[(\d+)\]\]/);
+  let html = '';
+  parts.forEach((part, idx) => {
+    if (idx % 2 === 0) { html += esc(part); return; }
+    const n = Number(part);
+    const width = Math.max(...item.blanks[n].answers.map(a => a.length), 4) + 2;
+    html += `<input class="blank" data-b="${n}" style="width:${width}ch" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Blank ${n + 1}">`;
+  });
+
+  el.innerHTML = `
+    <div class="fill-head"><span class="fill-title">${item.title}</span><span class="fill-file">${esc(item.file || '')}</span></div>
+    <pre><code>${html}</code></pre>
+    <div class="fill-foot">
+      <button type="button" class="btn primary check">Check</button>
+      <button type="button" class="btn ghost reveal">Show answer</button>
+      <span class="fill-msg">${item.blanks.length} blank${item.blanks.length > 1 ? 's' : ''} to fill.</span>
+    </div>`;
+
+  const inputs = [...el.querySelectorAll('.blank')];
+  const msg = el.querySelector('.fill-msg');
+  const blankOk = inp => item.blanks[inp.dataset.b].answers.some(a => norm(a) === norm(inp.value));
+
+  function lockSolved() {
+    inputs.forEach(inp => { inp.classList.add('right'); inp.classList.remove('wrong'); inp.readOnly = true; });
+    el.classList.add('solved');
+    msg.className = 'fill-msg ok';
+    msg.textContent = 'All correct.';
+  }
+
+  function check() {
+    const wrong = [];
+    inputs.forEach(inp => {
+      const ok = blankOk(inp);
+      inp.classList.toggle('right', ok);
+      inp.classList.toggle('wrong', !ok);
+      if (!ok) wrong.push(inp);
+    });
+    if (!wrong.length) { lockSolved(); if (!done[id]) markDone(id); return; }
+    msg.className = 'fill-msg';
+    const right = inputs.length - wrong.length;
+    msg.innerHTML = `${right} of ${inputs.length} correct. Hints:<ul>` +
+      wrong.map(inp => `<li>Blank ${Number(inp.dataset.b) + 1}: ${esc(item.blanks[inp.dataset.b].hint)}</li>`).join('') + '</ul>';
+    wrong[0].focus();
+  }
+
+  function reveal() {
+    inputs.forEach(inp => { inp.value = item.blanks[inp.dataset.b].answers[0]; inp.classList.remove('wrong', 'right'); });
+    msg.className = 'fill-msg';
+    msg.textContent = 'Answers filled in. Press Check to mark it done, or clear a blank to try it yourself.';
+  }
+
+  el.querySelector('.check').addEventListener('click', check);
+  el.querySelector('.reveal').addEventListener('click', reveal);
+  inputs.forEach(inp => inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); }));
+
+  if (done[id]) {
+    inputs.forEach(inp => { inp.value = item.blanks[inp.dataset.b].answers[0]; });
+    lockSolved();
+  }
+  return el;
+}
+
+// "Write it yourself": the learner writes an answer, reveals a model answer, then ticks the points they covered.
+function renderWrite(lesson, item, i) {
+  const id = `${lesson}:w${i}`;
+  const el = document.createElement('div');
+  el.className = 'fill write';
+  el.innerHTML = `
+    <div class="fill-head"><span class="fill-title">${item.title}</span><span class="fill-file">${esc(item.file || '')}</span></div>
+    <pre><code>${esc(item.code)}</code></pre>
+    <div class="write-body">
+      <label class="write-label" for="${id}">${item.prompt}</label>
+      <textarea id="${id}" placeholder="Bug: ...   Runtime: ..."></textarea>
+      <div class="write-actions">
+        <button type="button" class="btn primary reveal">Show model answer</button>
+        <span class="fill-msg">Write your answer first, then compare.</span>
+      </div>
+      <div class="model" hidden>
+        <p><b>Model answer.</b> ${item.model}</p>
+        <p>Tick each point your answer covered:</p>
+        <ul class="points">${item.points.map((p, k) => `<li><label><input type="checkbox" data-k="${k}"><span>${esc(p)}</span></label></li>`).join('')}</ul>
+      </div>
+    </div>`;
+
+  const model = el.querySelector('.model');
+  const msg = el.querySelector('.fill-msg');
+  const boxes = [...el.querySelectorAll('input[type="checkbox"]')];
+
+  function update() {
+    const n = boxes.filter(b => b.checked).length;
+    if (n === boxes.length) {
+      el.classList.add('solved');
+      msg.className = 'fill-msg ok';
+      msg.textContent = 'All points covered.';
+      if (!done[id]) markDone(id);
+    } else {
+      el.classList.remove('solved');
+      msg.className = 'fill-msg';
+      msg.textContent = `${n} of ${boxes.length} points covered.`;
+    }
+  }
+
+  el.querySelector('.reveal').addEventListener('click', () => { model.hidden = false; });
+  boxes.forEach(b => b.addEventListener('change', update));
+  if (done[id]) { model.hidden = false; boxes.forEach(b => { b.checked = true; }); update(); }
+  return el;
+}
+
+function renderPractice() {
+  document.querySelectorAll('.practice').forEach(box => {
+    const lesson = box.dataset.lesson;
+    const data = PRACTICE[lesson] || { quiz: [], fill: [] };
+    box.innerHTML = '';
+    if (data.quiz.length) {
+      const h = document.createElement('h3');
+      h.innerHTML = `Quiz <span class="count">${data.quiz.length} questions</span>`;
+      box.appendChild(h);
+      data.quiz.forEach((q, i) => box.appendChild(renderQuiz(lesson, q, i)));
+    }
+    if (data.fill.length) {
+      const h = document.createElement('h3');
+      h.innerHTML = `Complete the code <span class="count">${data.fill.length} exercise${data.fill.length > 1 ? 's' : ''}</span>`;
+      box.appendChild(h);
+      data.fill.forEach((f, i) => box.appendChild(renderFill(lesson, f, i)));
+    }
+    if ((data.write || []).length) {
+      const h = document.createElement('h3');
+      h.innerHTML = `Write it yourself <span class="count">${data.write.length} exercise${data.write.length > 1 ? 's' : ''}</span>`;
+      box.appendChild(h);
+      data.write.forEach((w, i) => box.appendChild(renderWrite(lesson, w, i)));
+    }
+  });
+}
+
+function updateProgress() {
+  let total = 0, solved = 0;
+  ORDER.forEach(lesson => {
+    const data = PRACTICE[lesson];
+    const ids = [
+      ...data.quiz.map((_, i) => `${lesson}:q${i}`),
+      ...data.fill.map((_, i) => `${lesson}:f${i}`),
+      ...(data.write || []).map((_, i) => `${lesson}:w${i}`),
+    ];
+    const n = ids.filter(id => done[id]).length;
+    total += ids.length; solved += n;
+    const badge = document.querySelector(`[data-tab="${lesson}"] .badge`);
+    badge.textContent = n === ids.length ? '✓' : `${n}/${ids.length}`;
+    badge.classList.toggle('complete', n === ids.length);
+  });
+  document.getElementById('progress-text').textContent = `${solved} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${total ? (solved / total) * 100 : 0}%`;
+}
+
+function renderPagers() {
+  ORDER.forEach((lesson, i) => {
+    const panel = document.getElementById(`panel-${lesson}`);
+    const pager = document.createElement('div');
+    pager.className = 'pager';
+    if (i > 0) pager.innerHTML += `<button type="button" class="prev" data-go="${ORDER[i - 1]}"><small>Previous</small><b>← ${TITLE[ORDER[i - 1]]}</b></button>`;
+    if (i < ORDER.length - 1) pager.innerHTML += `<button type="button" class="next" data-go="${ORDER[i + 1]}"><small>Next</small><b>${TITLE[ORDER[i + 1]]} →</b></button>`;
+    panel.appendChild(pager);
+  });
+}
+
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+const sidebar = document.querySelector('.sidebar');
+const menuBtn = document.getElementById('menu');
+const backdrop = document.getElementById('backdrop');
+
+// Small screens only: the sidebar opens as a drawer from the menu button.
+function setMenu(open) {
+  sidebar.classList.toggle('open', open);
+  backdrop.hidden = !open;
+  menuBtn.setAttribute('aria-expanded', open);
+}
+menuBtn.addEventListener('click', () => setMenu(!sidebar.classList.contains('open')));
+backdrop.addEventListener('click', () => setMenu(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+function show(name) {
+  if (!ORDER.includes(name)) name = 'overview';
+  tabs.forEach(t => {
+    const on = t.dataset.tab === name;
+    t.setAttribute('aria-selected', on);
+    t.tabIndex = on ? 0 : -1;
+  });
+  setMenu(false);
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+  try { history.replaceState(null, '', '#' + name); } catch (e) { /* ignore */ }
+  window.scrollTo(0, 0);
+}
+
+tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.tab)));
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go) show(go.dataset.go);
+});
+document.querySelector('.sidebar').addEventListener('keydown', e => {
+  const keys = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+  if (!(e.key in keys)) return;
+  e.preventDefault();
+  const i = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+  const next = tabs[(i + keys[e.key] + tabs.length) % tabs.length];
+  show(next.dataset.tab);
+  next.focus();
+});
+document.getElementById('reset').addEventListener('click', () => {
+  if (!confirm('Clear all your exercise progress?')) return;
+  done = {}; saveProgress(); renderPractice(); updateProgress();
+});
+
+renderPractice();
+renderPagers();
+updateProgress();
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

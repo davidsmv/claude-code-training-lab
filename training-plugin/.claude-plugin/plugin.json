@@ -1,0 +1,6 @@
+{
+  "name": "training-plugin",
+  "description": "Python skill, reviewer subagent and guardrail hooks from the Claude training",
+  "version": "1.0.0",
+  "author": { "name": "davidsmv" }
+}

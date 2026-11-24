@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "notes": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp-server/notes_server.py"]
+    }
+  }
+}
