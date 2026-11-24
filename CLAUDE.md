@@ -4,7 +4,7 @@ This repository contains an interactive HTML study guide and small Python exampl
 
 ## Project layout
 
-- `claude-concepts-guide.html` — self-contained guide; open directly in a browser.
+- `docs/claude-concepts-guide.html` — self-contained guide; open directly in a browser.
 - `caching-example/` — API prompt-caching demonstrations; requests can incur API usage charges.
 - `mcp-server/` — example MCP server; install dependencies from `requirements.txt`.
 - `training-plugin/` — sample skill, subagent, and hooks.

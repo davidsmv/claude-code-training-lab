@@ -4,7 +4,7 @@ An independent, hands-on learning workspace for Claude Code and related agent in
 
 ## What is here
 
-- `claude-concepts-guide.html` — an interactive study guide with lessons and quizzes on permissions, skills, hooks, plugins, MCP, caching, code review, and enterprise security. Open it in a browser; it has no build step.
+- `docs/claude-concepts-guide.html` — an interactive study guide with lessons and quizzes on permissions, skills, hooks, plugins, MCP, caching, code review, and enterprise security. Open it in a browser; it has no build step.
 - `caching-example/` — Python examples that compare prompt-caching patterns. Running them sends requests to the Anthropic API and may incur usage charges.
 - `mcp-server/` — a small in-memory MCP server that demonstrates tools, resources, and prompts.
 - `training-plugin/` — a sample plugin with a skill, read-only reviewer, and hooks.

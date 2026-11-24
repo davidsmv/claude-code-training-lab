@@ -4,7 +4,7 @@
     python cache_demo.py tools ttl    # run only the named ones
 
 Scenarios: automatic, manual, ttl, tools, conversation, shared_prefix, multi
-Study guide with concepts and exercises: claude-concepts-guide.html (Caching tab).
+Study guide with concepts and exercises: docs/claude-concepts-guide.html (Caching tab).
 
 Credentials and the gateway URL come from the environment (ANTHROPIC_AUTH_TOKEN
 or ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL), so nothing secret lives in this file.
